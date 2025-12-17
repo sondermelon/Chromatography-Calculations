@@ -1,0 +1,42 @@
+def calculate(
+    FRP_Rhamnose,):
+    """
+    Aim: Run a series of calculations with adjustable factors.
+    """
+
+    # Step 1: Mean FRP (FID Response Factor) Rhamnose Calculation
+    FRP_Rhamnose = (Mean_rhamnose_standard_conc * Mean_inositol_standard_area) / (Mean_rhamnose_standard_area * Mean_inositol_standard_conc)
+
+
+# ---- User Input ----
+r1 = float(input("Rhamnose Standard Integrated Area 1: "))
+r2 = float(input("Rhamnose Standard Integrated Area 2: "))
+r3 = float(input("Rhamnose Standard Integrated Area 3: "))
+
+rc1 = float(input("Rhamnose Standard Concentration 1 µg/mL: ")) 
+rc2 = float(input("Rhamnose Standard Concentration 2 µg/mL: ")) 
+rc3 = float(input("Rhamnose Standard Concentration 3 µg/mL: ")) 
+
+isc1 = float(input("Inositol Standard Integrated Area 1: "))
+isc2 = float(input("Inositol Standard Integrated Area 2: "))
+isc3 = float(input("Inositol Standard Integrated Area 3: "))
+
+isa1 = float(input("Inositol Standard Concentration 1 µg/mL: "))
+isa2 = float(input("Inositol Standard Concentration 2 µg/mL: "))
+isa3 = float(input("Inositol Standard Concentration 3 µg/mL: "))
+
+Mean_rhamnose_standard_area = (r1 + r2 + r3) / 3
+
+Mean_rhamnose_standard_conc = (rc1 + rc2 + rc3) / 3
+
+Mean_inositol_standard_conc = (isc1 + isc2 + isc3) / 3
+
+Mean_inositol_standard_area = (isa1 + isa2 + isa3) / 3
+
+
+# ---- Run Calculation ----
+output = calculate(
+    FRP_Rhamnose,
+)
+
+print("\nFinal Result:", output)
