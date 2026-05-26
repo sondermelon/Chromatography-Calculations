@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruit Cuticle GC-MS Library — v5 (Offline)</title>
+<style>
+:root {
+  --bg: #0f1419;
+  --bg2: #161c24;
+  --bg3: #1e2732;
+  --bg4: #242f3d;
+  --border: #2d3a4a;
+  --border2: #3a4a5c;
+  --text: #e2eaf4;
+  --text2: #8fa3bb;
+  --text3: #5a7295;
+  --green: #3dd68c;
+  --green-dim: #1a4d35;
+  --blue: #58a6ff;
+  --blue-dim: #1a3055;
+  --amber: #e3a735;
+  --amber-dim: #3d2a0a;
+  --red: #f87171;
+  --red-dim: #3d1a1a;
+  --purple: #c084fc;
+  --teal: #2dd4bf;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  --radius: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;}
+
+/* ── HEADER ── */
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;gap:16px;}
+.header-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--green),var(--blue));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.header-title{font-size:16px;font-weight:700;color:var(--text);}
+.header-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.header-badge{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.badge{font-size:10px;padding:3px 10px;border-radius:999px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);}
+.badge-offline{background:var(--green-dim);border-color:var(--green);color:var(--green);}
+
+/* ── MAIN LAYOUT ── */
+.container{max-width:1600px;margin:0 auto;padding:16px;}
+
+/* ── SMART MATCHER PANEL ── */
+.sm-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+.sm-header{background:linear-gradient(90deg,#0d2a1e,#0d1e2e);padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
+.sm-dot{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);flex-shrink:0;}
+.sm-title{font-size:14px;font-weight:700;color:var(--teal);}
+.sm-title-sub{font-size:11px;color:var(--text3);margin-left:auto;}
+.offline-badge{font-size:10px;padding:3px 9px;border-radius:999px;background:var(--green-dim);border:1px solid var(--green);color:var(--green);font-weight:700;flex-shrink:0;}
+.sm-body{padding:16px;}
+
+/* Input row */
+.sm-input-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+.sm-fg{display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px;}
+.sm-fg-ri{display:flex;flex-direction:column;gap:4px;min-width:120px;}
+.sm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.sm-input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 14px;outline:none;transition:border-color 0.2s;width:100%;}
+.sm-input:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(45,212,191,0.12);}
+.sm-input::placeholder{color:var(--text3);}
+.sm-btn{padding:10px 22px;background:var(--teal);color:#051a18;font-family:var(--font);font-size:13px;font-weight:700;border:none;border-radius:var(--radius);cursor:pointer;transition:all 0.2s;white-space:nowrap;align-self:flex-end;}
+.sm-btn:hover{background:#4ee8d4;transform:translateY(-1px);}
+
+/* How-to hint */
+.sm-hint{margin-top:10px;font-size:11px;color:var(--text3);display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.sm-hint-chip{font-size:11px;padding:3px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:999px;color:var(--text2);cursor:pointer;font-family:var(--mono);}
+.sm-hint-chip:hover{border-color:var(--teal);color:var(--teal);background:#0d3330;}
+
+/* Results */
+.sm-results{margin-top:14px;display:none;}
+.sm-results.visible{display:block;}
+.sm-summary{font-size:12px;color:var(--text2);padding:10px 14px;background:var(--bg3);border-radius:var(--radius);border-left:3px solid var(--teal);margin-bottom:12px;line-height:1.7;}
+.sm-candidates{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.sm-card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:12px;cursor:pointer;transition:border-color 0.2s;}
+.sm-card:hover{border-color:var(--blue);}
+.sm-card.score-high{border-left:3px solid var(--green);}
+.sm-card.score-med{border-left:3px solid var(--amber);}
+.sm-card.score-low{border-left:3px solid var(--text3);}
+.sm-card-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}
+.sm-card-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.sm-score-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;flex-shrink:0;}
+.score-badge-high{background:var(--green-dim);color:var(--green);}
+.score-badge-med{background:var(--amber-dim);color:var(--amber);}
+.score-badge-low{background:var(--bg4);color:var(--text3);}
+.sm-card-meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.sm-card-reason{font-size:11px;color:var(--text2);line-height:1.6;}
+.sm-card-tip{font-size:10px;color:var(--text3);margin-top:5px;font-style:italic;}
+.ion-match{border-color:var(--green)!important;color:var(--green)!important;background:var(--green-dim)!important;font-weight:700;}
+.ion-miss{opacity:0.45;}
+.sm-no-result{color:var(--text3);font-size:12px;padding:12px;text-align:center;}
+
+/* ── FILTER / SEARCH PANEL ── */
+.filter-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.filter-top{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:flex-end;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);}
+.fi{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--font);font-size:12px;padding:7px 10px;outline:none;transition:border-color 0.2s;}
+.fi:focus{border-color:var(--blue);}
+.fi[type=text]{min-width:200px;}
+.fi-ion{min-width:220px;font-family:var(--mono);}
+.fi[type=number]{width:110px;}
+
+/* multi-ion match indicator */
+.match-pill{font-size:10px;padding:1px 7px;border-radius:999px;font-weight:700;background:var(--green-dim);color:var(--green);border:1px solid var(--green);margin-left:4px;vertical-align:middle;}
+
+/* ── TABS ── */
+.tabs{display:flex;flex-wrap:wrap;gap:5px;}
+.tab{font-size:11px;font-weight:500;padding:4px 11px;border-radius:999px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all 0.15s;}
+.tab:hover{border-color:var(--blue);color:var(--blue);}
+.tab.on{background:var(--blue-dim);color:var(--blue);border-color:var(--blue);font-weight:600;}
+
+/* ── ION KEY ── */
+.ion-key{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--text2);align-items:center;padding:8px 0;border-top:1px solid var(--border);}
+.ion-key-item{display:flex;align-items:center;gap:5px;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;max-height:55vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);text-align:left;padding:10px 10px;border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--bg2);z-index:10;white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(45,58,74,0.6);cursor:pointer;transition:background 0.1s;}
+tbody tr:hover{background:var(--bg3);}
+tbody tr.expanded{background:var(--bg3);}
+td{padding:9px 10px;vertical-align:top;}
+td:first-child{min-width:180px;}
+.compound-name{font-size:13px;font-weight:600;color:var(--text);}
+.compound-formula{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;}
+.ri-num{font-family:var(--mono);font-weight:700;font-size:13px;}
+.ri-bar{height:4px;background:var(--border);border-radius:2px;width:80px;margin-top:5px;overflow:hidden;}
+.ri-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--green));}
+.ions{display:flex;flex-wrap:wrap;gap:3px;}
+.ion-tag{font-family:var(--mono);font-size:10px;padding:2px 5px;border-radius:4px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);}
+.ion-tag.b{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);font-weight:700;}
+.ion-tag.m{border-color:var(--green);color:var(--green);background:var(--green-dim);font-weight:700;}
+.ion-tag.bt{border-color:#a78bfa;color:#a78bfa;background:#2d1b5a;font-weight:700;}
+.ion-tag.mt{border-color:var(--teal);color:var(--teal);background:#0d3330;font-weight:700;}
+.ion-tag.hit{border-color:#f59e0b;color:#f59e0b;background:#3d2a0a;font-weight:700;box-shadow:0 0 4px rgba(245,158,11,0.4);}
+a.ext{font-size:11px;color:var(--text3);text-decoration:none;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;}
+a.ext:hover{color:var(--blue);}
+
+/* class badges */
+.cls{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;}
+.cls-alk{background:#1a3355;color:#58a6ff;border:1px solid #254b7a;}
+.cls-balk{background:#1a2d55;color:#79b8ff;border:1px solid #2a4080;}
+.cls-diene{background:#1a3320;color:#56d364;border:1px solid #25522a;}
+.cls-ald{background:#3d2a0a;color:#e3a735;border:1px solid #614010;}
+.cls-alc{background:#3d1a2a;color:#f87171;border:1px solid #5c2035;}
+.cls-sec{background:#2a1a40;color:#c084fc;border:1px solid #3f2660;}
+.cls-est{background:#3d3010;color:#d4a017;border:1px solid #5e4814;}
+.cls-acid{background:#1e1a40;color:#818cf8;border:1px solid #2d266e;}
+.cls-trit{background:#3d1a30;color:#f4a8c7;border:1px solid #5e2245;}
+.cls-ster{background:#2a2a2a;color:#aaaaaa;border:1px solid #404040;}
+.cls-cutin{background:#0d3325;color:#2dd4bf;border:1px solid #124e3a;}
+.cls-phen{background:#3d1a10;color:#fca5a5;border:1px solid #5c2810;}
+.cls-terp{background:#1a3320;color:#86efac;border:1px solid #25522a;}
+.cls-contam{background:#3d2a1a;color:#fdba74;border:1px solid #5c3e20;}
+
+/* expanded detail row */
+.detail-row td{padding:0;}
+.detail-inner{padding:14px 16px;background:var(--bg2);border-left:3px solid var(--blue);}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:640px){.detail-grid{grid-template-columns:1fr;}}
+.det-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:4px;margin-top:14px;}
+.det-lbl:first-child{margin-top:0;}
+.det-text{font-size:12px;color:var(--text2);line-height:1.7;}
+.tms-box{margin-top:6px;padding:10px 12px;background:var(--bg3);border:1px solid rgba(192,132,252,0.3);border-radius:6px;font-size:11px;color:#c084fc;line-height:1.7;}
+.no-tms-box{margin-top:6px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;font-size:11px;color:var(--text3);line-height:1.7;}
+.count{font-size:12px;color:var(--text3);padding:8px 0;font-weight:500;}
+.count strong{color:var(--text);}
+.tms-toggle{font-size:11px;padding:5px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text2);cursor:pointer;font-weight:600;transition:all 0.2s;font-family:var(--font);}
+.tms-toggle.on{background:#2a1a40;border-color:#c084fc;color:#c084fc;}
+
+/* references */
+.refbox{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px;font-size:11px;color:var(--text2);}
+.refbox h3{font-size:13px;color:var(--text);margin-bottom:10px;font-weight:600;}
+.refbox li{line-height:2;margin-left:16px;}
+.refbox a{color:var(--blue);text-decoration:none;}
+.refbox a:hover{text-decoration:underline;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🍅</div>
+  <div>
+    <div class="header-title">Fruit Cuticle GC-MS / FID Identification Library</div>
+    <div class="header-sub">115 compounds · Tomato · Apple · Grape · Literature-validated RI &amp; MS ions · v5 Offline</div>
+  </div>
+  <div class="header-badge">
+    <span class="badge">DB-1 / DB-5</span>
+    <span class="badge">TMS-aware</span>
+    <span class="badge badge-offline">✦ 100% Offline</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LOCAL SMART PEAK MATCHER              -->
+<!-- ═══════════════════════════════════════ -->
+<div class="sm-panel">
+  <div class="sm-header">
+    <div class="sm-dot"></div>
+    <div class="sm-title">🔬 Smart Peak Matcher</div>
+    <div class="sm-title-sub">Enter ions largest→smallest separated by &gt; — fully offline, no API needed</div>
+    <span class="offline-badge">⚡ LOCAL</span>
+  </div>
+  <div class="sm-body">
+    <div class="sm-input-row">
+      <div class="sm-fg">
+        <span class="sm-label">Ion Series — largest to smallest (use &gt; separator)</span>
+        <input class="sm-input" id="smIons"
+          placeholder="e.g.  57>71>85>99>113>127>141>338  or  331>275>147>73  or  203>218>257>426">
+      </div>
+      <div class="sm-fg-ri">
+        <span class="sm-label">RI (optional)</span>
+        <input class="sm-input" id="smRI" type="number" placeholder="e.g. 3100" style="font-family:var(--font);">
+      </div>
+      <button class="sm-btn" onclick="runSmartMatcher()">Match ⚡</button>
+    </div>
+
+    <div class="sm-hint">
+      <span style="color:var(--text3);">Examples:</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">57>71>85>99>408</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">57>71>85>99>113>127>141>338</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">331>275>147>129>73</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">203>218>257>189>426</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">75>271>153>125>496</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">132>73>117>453>468</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">207>133>191>73>222</span>
+      <span class="sm-hint-chip" onclick="fillSM(this)">149>167>279>390</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px;">· Separate ions with <code style="color:var(--teal);">&gt;</code> or <code style="color:var(--teal);">,</code> or space · First ion = highest priority</span>
+    </div>
+
+    <div class="sm-results" id="smResults"></div>
+  </div>
+</div>
+
+<!-- FILTER / SEARCH PANEL -->
+<div class="filter-panel">
+  <div class="filter-top">
+    <div class="fg">
+      <label for="q">Text Search</label>
+      <input type="text" class="fi" id="q" placeholder="Name, formula, class, source..." oninput="render()">
+    </div>
+    <div class="fg">
+      <label for="ionQ">Ion Filter m/z — use &gt; for multiple (57&gt;71&gt;85)</label>
+      <input type="text" class="fi fi-ion" id="ionQ"
+             placeholder="57  or  57>71>85  or  57,71,85"
+             oninput="render()"
+             title="Enter one or more m/z values separated by > or , — table sorts by match count">
+    </div>
+    <div class="fg">
+      <label for="riMin">RI Min</label>
+      <input type="number" class="fi" id="riMin" placeholder="e.g. 2800" oninput="render()">
+    </div>
+    <div class="fg">
+      <label for="riMax">RI Max</label>
+      <input type="number" class="fi" id="riMax" placeholder="e.g. 3200" oninput="render()">
+    </div>
+    <button class="tms-toggle" id="tmsBtn" onclick="toggleTMS()">TMS ions: OFF</button>
+    <button class="tms-toggle" onclick="clearAll()" style="background:var(--red-dim);border-color:var(--red);color:var(--red);">✕ Clear</button>
+    <div style="margin-left:auto;font-size:11px;color:var(--text3);text-align:right;line-height:1.8;">
+      <span class="ion-tag b" style="display:inline-block;">m/z</span> Base peak &nbsp;
+      <span class="ion-tag m" style="display:inline-block;">m/z</span> Mol. ion<br>
+      <span class="ion-tag bt" style="display:inline-block;">m/z</span> TMS base &nbsp;
+      <span class="ion-tag mt" style="display:inline-block;">m/z</span> TMS M⁺ &nbsp;
+      <span class="ion-tag hit" style="display:inline-block;">m/z</span> Filter hit
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" onclick="setF('all',this)">All (115)</button>
+    <button class="tab" onclick="setF('n-Alkane',this)">n-Alkanes</button>
+    <button class="tab" onclick="setF('Branched Alkane',this)">Branched Alkanes</button>
+    <button class="tab" onclick="setF('Alkadiene',this)">Alkadienes</button>
+    <button class="tab" onclick="setF('Aldehyde',this)">Aldehydes</button>
+    <button class="tab" onclick="setF('n-Alkanol',this)">n-Alkanols</button>
+    <button class="tab" onclick="setF('Sec. Alcohol / Ketone',this)">Sec. Alcohols / Ketones</button>
+    <button class="tab" onclick="setF('Wax Ester',this)">Wax Esters</button>
+    <button class="tab" onclick="setF('Fatty acid',this)">Fatty Acids</button>
+    <button class="tab" onclick="setF('Triterpenoid',this)">Triterpenoids</button>
+    <button class="tab" onclick="setF('Sterol',this)">Sterols</button>
+    <button class="tab" onclick="setF('Cutin monomer',this)">Cutin Monomers</button>
+    <button class="tab" onclick="setF('Phenolic',this)">Phenolics</button>
+    <button class="tab" onclick="setF('Terpene',this)">Terpenes</button>
+    <button class="tab" onclick="setF('Contaminant',this)">Contaminants</button>
+  </div>
+</div>
+
+<div class="count" id="cnt"></div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Compound</th>
+  <th>Class</th>
+  <th>Formula / MW</th>
+  <th>RI (DB-1/DB-5)</th>
+  <th>Key EI Ions (m/z)</th>
+  <th>Derivat.</th>
+  <th>Source / Abundance</th>
+  <th>Links</th>
+</tr>
+</thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+
+<div class="refbox" id="refbox">
+  <h3>Library Sources &amp; Key References</h3>
+  <ul>
+    <li><strong>Bauer et al. 2004a/b</strong> — Tomato surface wax GC/MS (n-alkanes C21–C35, branched alkanes, alkadienes, aldehydes C24/C26, alkanols C18–C34, acids, sterols, triterpenoids, naringenin-chalcone). <em>Eur. Food Res. Technol.</em> <a href="https://doi.org/10.1007/s00217-004-0943-0" target="_blank">doi:10.1007/s00217-004-0943-0</a></li>
+    <li><strong>Vogg et al. 2004</strong> — Tomato fruit cuticular waxes (MicroTom); LeCER6 mutant analysis. <em>Plant J.</em> <a href="https://doi.org/10.1111/j.1365-313X.2004.02102.x" target="_blank">doi:10.1111/j.1365-313X.2004.02102.x</a></li>
+    <li><strong>Leide et al. 2007</strong> — Developmental wax accumulation in MicroTom; branched alkanes dominate immature fruit. <em>Plant Physiol.</em> <a href="https://doi.org/10.1104/pp.107.098947" target="_blank">doi:10.1104/pp.107.098947</a></li>
+    <li><strong>Isaacson et al. 2009</strong> — GC-MS protocol for lipophilic profiling; MSTFA derivatisation. <em>Plant Cell Physiol.</em> <a href="https://doi.org/10.1093/pcp/pcp056" target="_blank">doi:10.1093/pcp/pcp056</a></li>
+    <li><strong>Fich et al. 2016</strong> — Chemical diversity of cuticle in seven wild <em>Solanum</em> species. <em>Plant Cell</em> <a href="https://doi.org/10.1105/tpc.16.00619" target="_blank">doi:10.1105/tpc.16.00619</a></li>
+    <li><strong>Domínguez et al. 2015</strong> — Biosynthesis &amp; composition of cutin in fruits (tomato, apple, grape, citrus, pepper). <em>J. Agric. Food Chem.</em> <a href="https://doi.org/10.1021/acs.jafc.5b00013" target="_blank">doi:10.1021/acs.jafc.5b00013</a></li>
+    <li><strong>España et al. 2014</strong> — Phenolics in tomato cuticle; UV protection role. <em>J. Exp. Bot.</em> <a href="https://doi.org/10.1093/jxb/eru353" target="_blank">doi:10.1093/jxb/eru353</a></li>
+    <li><strong>Lara et al. 2019</strong> — p-Coumaric acid and p-hydroxybenzoic acid in tomato cuticle polymer. <em>Postharvest Biol. Technol.</em> <a href="https://doi.org/10.1016/j.postharvbio.2018.12.018" target="_blank">doi:10.1016/j.postharvbio.2018.12.018</a></li>
+    <li><strong>Frontiers Chemistry 2025</strong> — Microwave-assisted cutin extraction; 10,16-diOH C16:0 dominant. <a href="https://doi.org/10.3389/fchem.2025.1734422" target="_blank">doi:10.3389/fchem.2025.1734422</a></li>
+    <li><strong>Belge et al. 2014</strong> — Apple cuticle: ursolic acid dominant; wax esters; alkanes. <em>J. Agric. Food Chem.</em> <a href="https://doi.org/10.1021/jf503099r" target="_blank">doi:10.1021/jf503099r</a></li>
+    <li><strong>NIST WebBook</strong> — Reference EI mass spectra &amp; GC data. <a href="https://webbook.nist.gov/chemistry/" target="_blank">webbook.nist.gov</a> <a href="https://doi.org/10.18434/T4D303" target="_blank">doi:10.18434/T4D303</a></li>
+  </ul>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════════
+//  COMPOUND DATA  (115 compounds)
+// ═══════════════════════════════════════════
+const data=[
+/* n-ALKANES */
+{n:"n-Nonadecane (C19)",cls:"n-Alkane",css:"cls-alk",f:"C₁₉H₄₀",mw:268,ri:1900,ions:[57,71,85,99,268],b:57,mol:268,deriv:"None",frac:"Wax — trace; RI calibration anchor",fid:"Very minor peak at the lower end of the wax alkane envelope. Primarily used as an RI calibration standard.",ms:"Universal n-alkane pattern: m/z 57 (C₄H₉⁺) base. Homologous ion series: 57, 71, 85, 99... (increments of 14 Da). MW 268 molecular ion weak but detectable. No oxygen-containing fragments.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C629925&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Heneicosane (C21)",cls:"n-Alkane",css:"cls-alk",f:"C₂₁H₄₄",mw:296,ri:2100,ions:[57,71,85,99,296],b:57,mol:296,deriv:"None",frac:"Tomato wax — trace",fid:"Small peak at the foot of the main alkane envelope. Useful as early anchor in wax chromatograms.",ms:"m/z 57 base. MW 296. Odd-chain. No polar fragments.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C629947&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Tricosane (C23)",cls:"n-Alkane",css:"cls-alk",f:"C₂₃H₄₈",mw:324,ri:2300,ions:[57,71,85,99,324],b:57,mol:324,deriv:"None",frac:"Tomato/apple wax — minor",fid:"Part of the ascending odd-carbon alkane series. Still well below the C29–C31 peak maximum.",ms:"m/z 57 base. MW 324. Characteristic alkane ion staircase at 57, 71, 85, 99.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638675&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Pentacosane (C25)",cls:"n-Alkane",css:"cls-alk",f:"C₂₅H₅₂",mw:352,ri:2500,ions:[57,71,85,99,352],b:57,mol:352,deriv:"None",frac:"Tomato wax — minor (~2%)",fid:"Growing peak on ascending slope toward C29–C31 maximum.",ms:"m/z 57 base. MW 352. [M–15]⁺ at 337 often detectable.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C629992&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Heptacosane (C27)",cls:"n-Alkane",css:"cls-alk",f:"C₂₇H₅₆",mw:380,ri:2700,ions:[57,71,85,99,380],b:57,mol:380,deriv:"None",frac:"Tomato wax — moderate (~5%)",fid:"Significant peak. Fourth-largest alkane in tomato.",ms:"m/z 57 base. MW 380. [M–15]⁺ at 365.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C593497&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Nonacosane (C29)",cls:"n-Alkane",css:"cls-alk",f:"C₂₉H₆₀",mw:408,ri:2900,ions:[57,71,85,99,408],b:57,mol:408,deriv:"None",frac:"Tomato/apple wax — 10–15%",fid:"Large symmetric peak. Second only to C31 in S. lycopersicum. Primary RI anchor at 2900.",ms:"m/z 57 base. MW 408. [M–15]⁺ at 393.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C630035&Mask=200",doi:"10.1105/tpc.16.00619"},
+{n:"n-Hentriacontane (C31)",cls:"n-Alkane",css:"cls-alk",f:"C₃₁H₆₄",mw:436,ri:3100,ions:[57,71,85,99,436],b:57,mol:436,deriv:"None",frac:"Tomato wax — 30–40%; DOMINANT single compound in S. lycopersicum",fid:"THE tallest FID peak in tomato wax fraction. Absent in lecer6 mutant. Use RI=3100 as primary calibration point.",ms:"m/z 57 base. MW 436. [M–15]⁺ at 421 (loss of CH₃). Absolutely dominant in tomato.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C630046&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"n-Tritriacontane (C33)",cls:"n-Alkane",css:"cls-alk",f:"C₃₃H₆₈",mw:464,ri:3300,ions:[57,71,85,99,464],b:57,mol:464,deriv:"None",frac:"Tomato wax — 5–10%",fid:"Third major alkane peak. Elutes ~8–12 min after C31.",ms:"m/z 57 base. MW 464. Pattern identical to all n-alkanes but shifted by +28 Da.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C630057&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Pentatriacontane (C35)",cls:"n-Alkane",css:"cls-alk",f:"C₃₅H₇₂",mw:492,ri:3500,ions:[57,71,85,99,492],b:57,mol:492,deriv:"None",frac:"Tomato wax — trace to minor",fid:"Minor late-eluting peak. Upper boundary of alkane envelope.",ms:"m/z 57 base. MW 492. Molecular ion very weak at this chain length.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C630079&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Heptatriacontane (C37)",cls:"n-Alkane",css:"cls-alk",f:"C₃₇H₇₆",mw:520,ri:3700,ions:[57,71,85,99,520],b:57,mol:520,deriv:"None",frac:"Wax — trace; some apple/pear cuticle",fid:"Very late, very minor peak. Requires high-temperature GC programme.",ms:"m/z 57 base. MW 520 often undetectable.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C630100&Mask=200",doi:"10.1021/jf503099r"},
+{n:"n-Triacontane (C30)",cls:"n-Alkane",css:"cls-alk",f:"C₃₀H₆₂",mw:422,ri:3000,ions:[57,71,85,99,422],b:57,mol:422,deriv:"None",frac:"Tomato wax — trace even-carbon alkane",fid:"Small peak between C29 and C31. Even-chain alkanes are minor in plant wax.",ms:"m/z 57 base. MW 422.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638368&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+/* BRANCHED ALKANES */
+{n:"iso-Nonacosane (2-methyloctacosane)",cls:"Branched Alkane",css:"cls-balk",f:"C₂₉H₆₀",mw:408,ri:2882,ions:[57,71,85,99,379,408],b:57,mol:408,deriv:"None",frac:"Tomato wax — moderate in immature green fruit; decreases during ripening",fid:"Elutes ~18 RI units before n-C29. Part of the iso-alkane cluster seen in green fruits.",ms:"m/z 57 base. Distinguish from n-C29 by slightly earlier RI AND presence of [M–29]⁺ (ethyl loss, at 379) as minor diagnostic branching fragment.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C1560961&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"anteiso-Nonacosane (3-methyloctacosane)",cls:"Branched Alkane",css:"cls-balk",f:"C₂₉H₆₀",mw:408,ri:2892,ions:[57,71,85,99,365,408],b:57,mol:408,deriv:"None",frac:"Tomato wax — co-occurs with iso-C29 in immature fruit",fid:"Elutes between iso-C29 and n-C29. High-resolution capillary GC needed.",ms:"m/z 57 base. [M–43]⁺ at 365 (loss of isopropyl) diagnostic for anteiso branching.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C1560962&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"iso-Hentriacontane (2-methyltriacontane)",cls:"Branched Alkane",css:"cls-balk",f:"C₃₁H₆₄",mw:436,ri:3082,ions:[57,71,85,99,407,436],b:57,mol:436,deriv:"None",frac:"Tomato wax — high in immature fruit (up to 32%); decreases at breaker stage. Present in lecer6 mutant (unlike n-C31)",fid:"Elutes ~18 RI units before n-C31. Key diagnostic: this peak IS present in lecer6 mutant wax.",ms:"m/z 57 base. [M–29]⁺ at 407 confirms methyl branching. MW=436 identical to n-C31 — distinction is ONLY by RI and minor branching ions.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C26730148&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"anteiso-Hentriacontane (3-methyltriacontane)",cls:"Branched Alkane",css:"cls-balk",f:"C₃₁H₆₄",mw:436,ri:3092,ions:[57,71,85,99,393,436],b:57,mol:436,deriv:"None",frac:"Tomato wax — minor; co-occurs with iso-C31 in immature fruit",fid:"Elutes between iso-C31 (3082) and n-C31 (3100). High-resolution GC required.",ms:"m/z 57 base. [M–43]⁺ at 393 distinguishes from iso-C31.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C1700946&Mask=200",doi:"10.1104/pp.107.098947"},
+/* ALKADIENES */
+{n:"n-Hentriacontene (C31:1)",cls:"Alkadiene",css:"cls-diene",f:"C₃₁H₆₂",mw:434,ri:3093,ions:[55,69,83,97,434],b:55,mol:434,deriv:"None",frac:"Tomato wax — minor alkene",fid:"Elutes just before n-C31 alkane. One double bond reduces MW by 2 Da.",ms:"m/z 55 (C₄H₇⁺) base — the 2 Da shift from m/z 57 indicates C=C bond. MW at 434.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C62238&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Hentriacontadiene (C31:2)",cls:"Alkadiene",css:"cls-diene",f:"C₃₁H₆₀",mw:432,ri:3083,ions:[55,67,81,95,432],b:55,mol:432,deriv:"None",frac:"Tomato wax — increases from mature green to red-ripe; biosynthetically significant",fid:"Elutes ~17 RI units before n-C31 alkane. Key marker of wax changes during tomato ripening.",ms:"m/z 55 base. Diene series: 55, 67, 81, 95. MW 432 (4 Da below alkane).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C55682162&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"n-Tritriacontadiene (C33:2)",cls:"Alkadiene",css:"cls-diene",f:"C₃₃H₆₂",mw:458,ri:3283,ions:[55,67,81,95,458],b:55,mol:458,deriv:"None",frac:"Tomato wax — minor diene",fid:"Elutes before n-C33 alkane. Minor companion to C31:2 diene.",ms:"m/z 55 base. MW 458 (+28 Da from C31:2).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C55682174&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Tritriacontene (C33:1)",cls:"Alkadiene",css:"cls-diene",f:"C₃₃H₆₄",mw:460,ri:3293,ions:[55,69,83,97,460],b:55,mol:460,deriv:"None",frac:"Tomato wax — trace alkene",fid:"Elutes between C33:2 and n-C33. Very minor.",ms:"m/z 55 base. MW 460.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C62239&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Tritriaconttriene (C33:3)",cls:"Alkadiene",css:"cls-diene",f:"C₃₃H₆₀",mw:456,ri:3275,ions:[55,67,79,93,456],b:55,mol:456,deriv:"None",frac:"Tomato wax — trace (hexane fraction)",fid:"Early-eluting within C33 cluster. Three double bonds reduce MW by 6 Da.",ms:"m/z 55 base. MW 456. Triene series: 55, 67, 79, 93.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C57276&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Pentatriacontadiene (C35:2)",cls:"Alkadiene",css:"cls-diene",f:"C₃₅H₆₆",mw:486,ri:3483,ions:[55,67,81,95,486],b:55,mol:486,deriv:"None",frac:"Tomato wax — trace",fid:"Minor late-eluting diene. Upper boundary of diene series in tomato.",ms:"m/z 55 base. MW 486.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C55682186&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+/* ALDEHYDES */
+{n:"n-Octadecanal (C18 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₁₈H₃₆O",mw:268,ri:2090,ions:[57,44,29,71,267],b:57,mol:268,deriv:"None",frac:"Wax — trace; grape/citrus cuticle",fid:"Elutes close to C18 alkane region. Even-chain aldehydes elute between flanking odd-carbon alkanes.",ms:"m/z 57 base. Key: m/z 29 (CHO⁺) and m/z 44 (McLafferty). [M-1]⁺ at 267. These three ions identify an aldehyde vs alkane.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638664&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Eicosanal (C20 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₂₀H₄₀O",mw:296,ri:2290,ions:[57,44,29,71,295],b:57,mol:296,deriv:"None",frac:"Wax — minor; citrus peel / grape cuticle",fid:"Elutes between C20 and C21 alkane standards.",ms:"m/z 57 base. m/z 29 (CHO⁺) and m/z 44 (McLafferty) diagnostic. [M-1]⁺ at 295.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C4181957&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Docosanal (C22 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₂₂H₄₄O",mw:324,ri:2490,ions:[57,44,29,71,323],b:57,mol:324,deriv:"None",frac:"Wax — minor in apple/grape; trace in tomato",fid:"Elutes between C22 and C23 alkane standards.",ms:"m/z 57 base. m/z 29 + 44 diagnostic. [M-1]⁺ at 323.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C6765395&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Tetracosanal (C24 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₂₄H₄₈O",mw:352,ri:2690,ions:[57,44,29,71,351],b:57,mol:352,deriv:"None",frac:"Tomato wax — minor; ABSENT in lecer6 mutant (Leide 2007)",fid:"Elutes between C24 and C25 alkane standards. Absence in lecer6 mutant proves CER6/CER1 pathway required.",ms:"m/z 57 base. m/z 29 (CHO⁺) and m/z 44 (McLafferty) distinguish from n-C24 alkane (no m/z 29/44). [M-1]⁺ at 351.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638620&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"n-Hexacosanal (C26 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₂₆H₅₂O",mw:380,ri:2890,ions:[57,44,29,71,379],b:57,mol:380,deriv:"None",frac:"Tomato wax — minor; absent in lecer6 (Leide 2007); also in apple",fid:"Elutes between C26 and C27 alkane standards. Key marker of functional CER6 pathway.",ms:"m/z 57 base. m/z 29 (CHO⁺) and m/z 44 (McLafferty). [M-1]⁺ at 379.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638629&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"n-Octacosanal (C28 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₂₈H₅₆O",mw:408,ri:3090,ions:[57,44,29,71,407],b:57,mol:408,deriv:"None",frac:"Wax — minor; bilberry dominant aldehyde; minor in tomato",fid:"Elutes just before n-C31 alkane. In blueberry/bilberry wax, octacosanal is the dominant aldehyde (>10%).",ms:"m/z 57 base. m/z 29 + 44. [M-1]⁺ at 407.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C557420&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Triacontanal (C30 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₃₀H₆₀O",mw:436,ri:3290,ions:[57,44,29,71,435],b:57,mol:436,deriv:"None",frac:"Wax — minor; various fruit cuticles",fid:"CRITICAL: MW 436 same as n-C31 alkane. Distinguish by RI (3290 vs 3100) and m/z 29/44.",ms:"MW 436 = n-C31 alkane. Distinguish by RI 3290 (not 3100), m/z 29 (CHO⁺) and m/z 44 present; [M-1]⁺ at 435.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C86854038&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Dotriacontanal (C32 aldehyde)",cls:"Aldehyde",css:"cls-ald",f:"C₃₂H₆₄O",mw:464,ri:3490,ions:[57,44,29,71,463],b:57,mol:464,deriv:"None",frac:"Tomato wax — wild-type MicroTom; ABSENT in lecer6 (key marker)",fid:"Latest-eluting significant aldehyde in tomato. Absence in lecer6 diagnostic for defective VLCFA elongation beyond C30.",ms:"MW 464 = n-C33 alkane. Distinguish by RI~3490 (not 3300), m/z 29 (CHO⁺) present, m/z 44 McLafferty, [M-1]⁺ at 463.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C3944798&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+/* n-ALKANOLS */
+{n:"1-Octadecanol (C18-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₁₈H₃₈O",mw:270,ri:2082,ions:[75,97,111,299,342],b:75,mol:null,deriv:"TMS → MW 342",frac:"Tomato wax — minor; lowest even-chain alcohol detected",fid:"Earliest FID peak in the primary alcohol series. As TMS ether: sharp peak.",ms:"As TMS: m/z 75 base [(CH₃)₂Si=OH]⁺. [M-15]⁺ at 327. [M-90]⁺ at 252. No molecular ion at 342.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C112925&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Eicosanol (C20-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₀H₄₂O",mw:298,ri:2282,ions:[75,97,111,327,370],b:75,mol:null,deriv:"TMS → MW 370",frac:"Tomato wax — minor even-chain alcohol",fid:"Part of primary alcohol homologous series.",ms:"m/z 75 base. [M-15]⁺ at 355.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C629969&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Docosanol (C22-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₂H₄₆O",mw:326,ri:2482,ions:[75,97,111,355,398],b:75,mol:null,deriv:"TMS → MW 398",frac:"Tomato/apple wax — minor",fid:"Elutes between C22 and C23 alkane when as TMS ether.",ms:"m/z 75 base. [M-15]⁺ at 383. [M-90]⁺ at 308.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C661193&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Tetracosanol (C24-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₄H₅₀O",mw:354,ri:2682,ions:[75,97,111,383,426],b:75,mol:null,deriv:"TMS → MW 426",frac:"Tomato wax — minor to moderate",fid:"Growing even-chain alcohol peak.",ms:"m/z 75 base. [M-15]⁺ at 411.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506514&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Hexacosanol (C26-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₆H₅₄O",mw:382,ri:2882,ions:[75,97,111,411,454],b:75,mol:null,deriv:"TMS → MW 454",frac:"Tomato wax — minor to moderate",fid:"Significant even-carbon alcohol peak. Elutes in C26 alkane region.",ms:"m/z 75 base. [M-15]⁺ at 439. [M-90]⁺ at 364.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506525&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Octacosanol (C28-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₈H₅₈O",mw:410,ri:3082,ions:[75,97,111,439,482],b:75,mol:null,deriv:"TMS → MW 482",frac:"Tomato wax — moderate; typically the most abundant primary alcohol in tomato surface wax",fid:"Largest primary alcohol FID peak in most tomato extracts. Elutes near n-C31 region.",ms:"m/z 75 base. [M-15]⁺ at 467. [M-90]⁺ at 392. Distinguish from n-C28 alkane (RI=2800, m/z 57) by m/z 75 base and RI 3082.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C557616&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Triacontanol (C30-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₃₀H₆₂O",mw:438,ri:3282,ions:[75,97,111,467,510],b:75,mol:null,deriv:"TMS → MW 510",frac:"Tomato wax — minor",fid:"Late-eluting primary alcohol. Small peak after triterpenoid cluster.",ms:"m/z 75 base. [M-15]⁺ at 495.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C593500&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Dotriacontanol (C32-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₃₂H₆₆O",mw:466,ri:3482,ions:[75,97,111,495,538],b:75,mol:null,deriv:"TMS → MW 538",frac:"Tomato wax — trace; upper limit of alcohol series",fid:"Very late minor peak.",ms:"m/z 75 base. [M-15]⁺ at 523.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C544900&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"1-Tetratriacontanol (C34-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₃₄H₇₀O",mw:494,ri:3682,ions:[75,97,111,523,566],b:75,mol:null,deriv:"TMS → MW 566",frac:"Wax — trace; apple/grape",fid:"Extreme late eluter. Very minor.",ms:"m/z 75 base. [M-15]⁺ at 551.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C6922876&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"n-Alkadienol C22 (C22:2-OH)",cls:"n-Alkanol",css:"cls-alc",f:"C₂₂H₄₄O",mw:324,ri:2460,ions:[75,67,81,95,396],b:75,mol:null,deriv:"TMS → MW 396",frac:"Tomato wax — trace; Bauer 2004 alkadienols C22/C24/C26",fid:"Elutes slightly before saturated C22 alcohol.",ms:"m/z 75 base (TMS ether) + diene ions 67, 81, 95.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506528&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+/* SEC. ALCOHOLS / KETONES */
+{n:"Nonacosan-10-ol (C29 secondary alcohol)",cls:"Sec. Alcohol / Ketone",css:"cls-sec",f:"C₂₉H₆₀O",mw:424,ri:3010,ions:[75,271,153,125,424],b:75,mol:424,deriv:"TMS → MW 496",frac:"Brassica wax dominant; rare in fruit cuticle; trace in some tomato extracts",fid:"Elutes in C29–C31 region. Midchain secondary alcohol — diagnostic ions differ markedly from primary alcohols.",ms:"As TMS: m/z 75 base. Diagnostic midchain cleavage ions: m/z 271 and m/z 153 (from C10 position cleavage in C29 chain). MW-TMS 496.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C4386814&Mask=200",doi:"10.1021/acs.jafc.5b00013",nTMS:1,molTMS:496,bTMS:75,ionsTMS:[496],msTMS:"TMS derivative: 1 group (+72 Da). Derivatised M⁺ = 496. TMS base peak = 75."},
+{n:"Hentriacontan-16-one (C31 ketone)",cls:"Sec. Alcohol / Ketone",css:"cls-sec",f:"C₃₁H₆₂O",mw:450,ri:3195,ions:[57,99,155,295,450],b:57,mol:450,deriv:"None",frac:"Wax — trace; Brassica/Arabidopsis; rare in fruit cuticle",fid:"Elutes just after n-C31 alkane. Ketone slightly shifts RI vs alkane.",ms:"m/z 57 base. Diagnostic α-cleavage ions: m/z 155 (C10-CO⁺ from C1 side) and m/z 295 (C16-CO⁺ from C31 side). [M]⁺ at 450. Ketones show NO m/z 29.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C502007&Mask=200",doi:"10.1021/acs.jafc.5b00013",nTMS:0,molTMS:null,bTMS:57,ionsTMS:[],msTMS:"Ketone — NOT silylated by BSTFA/MSTFA (no active H)."},
+/* WAX ESTERS */
+{n:"Wax Ester C44 (C24 acid + C20 alcohol)",cls:"Wax Ester",css:"cls-est",f:"C₄₄H₈₈O₂",mw:649,ri:3870,ions:[57,71,369,368,649],b:57,mol:null,deriv:"None (or analyse after saponification)",frac:"Wild tomato (S. habrochaites, S. neorickii) — 7–20%; ABSENT in S. lycopersicum wild-type",fid:"Very late-eluting broad peak. Absence in S. lycopersicum wild-type confirms wild-type.",ms:"Mol. ion very weak. Acid fragment [R₁CO₂H+2H]⁺ identifies acid. m/z 57 base. Saponify for definitive analysis.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C591810&Mask=200",doi:"10.1105/tpc.16.00619"},
+{n:"Wax Ester C46 (C26 acid + C20 alcohol)",cls:"Wax Ester",css:"cls-est",f:"C₄₆H₉₂O₂",mw:677,ri:3960,ions:[57,71,397,396,677],b:57,mol:null,deriv:"None",frac:"Apple/grape cuticle — moderate; increases during ripening",fid:"Broad, late-eluting ester band. Apple wax shows strong increase in esters during ripening.",ms:"m/z 57 base. Acid-derived fragment m/z 397. Saponify first for definitive analysis.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C627881&Mask=200",doi:"10.1021/jf503099r"},
+{n:"Wax Ester C48 (C28 acid + C20 alcohol)",cls:"Wax Ester",css:"cls-est",f:"C₄₈H₉₆O₂",mw:705,ri:4050,ions:[57,71,425,424,705],b:57,mol:null,deriv:"None",frac:"Apple/pear wax — moderate",fid:"Part of the ester homologous series. Even-chain esters strongly favoured in apple cuticle.",ms:"m/z 57 base. Acid fragment m/z 425. Saponify + separate GC-MS for definitive ID.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C624889&Mask=200",doi:"10.1021/jf503099r"},
+/* FATTY ACIDS */
+{n:"Tetradecanoic acid (myristic, C14:0)",cls:"Fatty acid",css:"cls-acid",f:"C₁₄H₂₈O₂",mw:228,ri:1750,ions:[132,73,117,285,300],b:132,mol:300,deriv:"TMS → MW 300",frac:"Wax — trace; cutin biosynthetic precursor",fid:"Early fatty acid peak. Lower-bound anchor for acid series.",ms:"TMS ester: m/z 132 base (McLafferty of TMS ester). MW-TMS 300. m/z 73 TMS cation.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C544637&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"Hexadecanoic acid (palmitic, C16:0)",cls:"Fatty acid",css:"cls-acid",f:"C₁₆H₃₂O₂",mw:256,ri:1967,ions:[132,73,117,313,328],b:132,mol:328,deriv:"TMS → MW 328",frac:"Wax — minor free acid; major cutin biosynthetic precursor; suberin monomer",fid:"Sharp early fatty acid peak. Most abundant free fatty acid in most plant tissues.",ms:"TMS ester: m/z 132 base (McLafferty). MW-TMS 328. [M-15]⁺ at 313. m/z 73 TMS cation. m/z 132 is 100% diagnostic — no alkane or alcohol shares this fragment.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C57103&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"Hexadec-9-enoic acid (palmitoleic, C16:1)",cls:"Fatty acid",css:"cls-acid",f:"C₁₆H₃₀O₂",mw:254,ri:1940,ions:[55,67,83,132,326],b:55,mol:326,deriv:"TMS → MW 326",frac:"Wax — trace unsaturated acid; minor cutin component",fid:"Elutes just before C16:0.",ms:"TMS ester: m/z 55 base. m/z 132 McLafferty still present. MW-TMS 326.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C373499&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"Octadecanoic acid (stearic, C18:0)",cls:"Fatty acid",css:"cls-acid",f:"C₁₈H₃₆O₂",mw:284,ri:2174,ions:[132,73,117,341,356],b:132,mol:356,deriv:"TMS → MW 356",frac:"Wax — minor free acid; cutin minor; suberin monomer",fid:"Second main fatty acid peak. Sharp with TMS.",ms:"TMS ester: m/z 132 base. MW-TMS 356. [M-15]⁺ at 341.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C57114&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"Octadec-9-enoic acid (oleic, C18:1)",cls:"Fatty acid",css:"cls-acid",f:"C₁₈H₃₄O₂",mw:282,ri:2145,ions:[55,67,83,132,354],b:55,mol:354,deriv:"TMS → MW 354",frac:"Wax/cutin — minor unsaturated acid",fid:"Elutes before stearic C18:0.",ms:"TMS ester: m/z 55 base. m/z 132 (McLafferty present). MW-TMS 354.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C112801&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"Octadeca-9,12-dienoic acid (linoleic, C18:2)",cls:"Fatty acid",css:"cls-acid",f:"C₁₈H₃₂O₂",mw:280,ri:2115,ions:[55,67,79,132,352],b:55,mol:352,deriv:"TMS → MW 352",frac:"Wax — minor; some cutin fractions",fid:"Elutes before oleic C18:1.",ms:"TMS ester: m/z 55 base. MW-TMS 352. m/z 79 diagnostic for methylene-interrupted dienes.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C60333&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"Octadeca-9,12,15-trienoic acid (α-linolenic, C18:3)",cls:"Fatty acid",css:"cls-acid",f:"C₁₈H₃₀O₂",mw:278,ri:2080,ions:[55,67,79,132,350],b:55,mol:350,deriv:"TMS → MW 350",frac:"Wax/cutin — trace polyunsaturated",fid:"Earliest-eluting C18 fatty acid.",ms:"TMS ester: m/z 55 base. MW-TMS 350.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C463401&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"Eicosanoic acid (arachidic, C20:0)",cls:"Fatty acid",css:"cls-acid",f:"C₂₀H₄₀O₂",mw:312,ri:2374,ions:[132,73,117,369,384],b:132,mol:384,deriv:"TMS → MW 384",frac:"Wax — minor VLCFA; free acid in epicuticular wax",fid:"Small but distinct peak. Start of the VLCFA region.",ms:"m/z 132 base (McLafferty). MW-TMS 384. [M-15]⁺ at 369.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506309&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Docosanoic acid (behenic, C22:0)",cls:"Fatty acid",css:"cls-acid",f:"C₂₂H₄₄O₂",mw:340,ri:2574,ions:[132,73,117,397,412],b:132,mol:412,deriv:"TMS → MW 412",frac:"Wax — minor VLCFA",fid:"Growing VLCFA peak. Even-chain series.",ms:"m/z 132 base. MW-TMS 412. [M-15]⁺ at 397.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C112856&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Tetracosanoic acid (lignoceric, C24:0)",cls:"Fatty acid",css:"cls-acid",f:"C₂₄H₄₈O₂",mw:368,ri:2774,ions:[132,73,117,425,440],b:132,mol:440,deriv:"TMS → MW 440",frac:"Wax — minor to moderate VLCFA",fid:"Significant VLCFA peak. Elutes in C24 alkane region but m/z 132 distinguishes it.",ms:"m/z 132 base (McLafferty — definitive acid ID). MW-TMS 440. [M-15]⁺ at 425.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C557595&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Hexacosanoic acid (cerotic, C26:0)",cls:"Fatty acid",css:"cls-acid",f:"C₂₆H₅₂O₂",mw:396,ri:2975,ions:[132,73,117,453,468],b:132,mol:468,deriv:"TMS → MW 468",frac:"Wax — moderate; one of most abundant free acids in tomato surface wax (Bauer 2004)",fid:"Strong VLCFA peak. m/z 132 distinguishes from co-eluting C26 alkane (m/z 57 base).",ms:"m/z 132 base. MW-TMS 468. [M-15]⁺ at 453. m/z 132 100% diagnostic for fatty acid class.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506467&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Octacosanoic acid (montanic, C28:0)",cls:"Fatty acid",css:"cls-acid",f:"C₂₈H₅₆O₂",mw:424,ri:3175,ions:[132,73,117,481,496],b:132,mol:496,deriv:"TMS → MW 496",frac:"Wax — minor to moderate; tomato, apple, citrus wax",fid:"Late-eluting fatty acid. Elutes in C31 alkane region. Confirm by m/z 132.",ms:"m/z 132 base. MW-TMS 496. [M-15]⁺ at 481.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506489&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Triacontanoic acid (melissic, C30:0)",cls:"Fatty acid",css:"cls-acid",f:"C₃₀H₆₀O₂",mw:452,ri:3375,ions:[132,73,117,509,524],b:132,mol:524,deriv:"TMS → MW 524",frac:"Wax — minor; upper limit of acid series in most fruit cuticles",fid:"Late-eluting minor peak. Beyond the triterpenoid cluster.",ms:"m/z 132 base. MW-TMS 524. [M-15]⁺ at 509.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506528&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Dotriacontanoic acid (lacceroic, C32:0)",cls:"Fatty acid",css:"cls-acid",f:"C₃₂H₆₄O₂",mw:480,ri:3575,ions:[132,73,117,537,552],b:132,mol:552,deriv:"TMS → MW 552",frac:"Wax — trace; citrus and grape cuticle",fid:"Very late minor peak.",ms:"m/z 132 base. MW-TMS 552. [M-15]⁺ at 537.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C629489&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+/* TRITERPENOIDS */
+{n:"Squalene",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀",mw:410,ri:2900,ions:[69,81,95,121,341],b:69,mol:410,deriv:"None",frac:"Wax — trace biosynthetic precursor to amyrins and sterols",fid:"Elutes in C29–C31 alkane region. Minor but biologically significant direct precursor to all pentacyclic triterpenoids.",ms:"m/z 69 base (C₅H₉⁺, isoprene unit). Polyterpene ions: 69, 81, 95, 121, 341 ([M-69]⁺). MW 410. m/z 69 base distinguishes from all alkanes.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C111024&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"α-Amyrin",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3220,ions:[218,203,257,189,426],b:218,mol:426,deriv:"None (or TMS → MW 498)",frac:"Tomato wax — 5–15%; major triterpenoid; increases during ripening",fid:"Broad, somewhat asymmetric peak just after C31 alkane. First of the amyrin cluster.",ms:"m/z 218 base: retro-Diels-Alder fragment of ursane ring. KEY: m/z 218/203 ratio >1 confirms α-amyrin vs β-amyrin (reversed). MW 426.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C638959&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"β-Amyrin",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3200,ions:[203,218,257,189,426],b:203,mol:426,deriv:"None (or TMS → MW 498)",frac:"Tomato wax — 5–15%; co-dominant with α-amyrin",fid:"Elutes ~0.5–2 min before α-amyrin on DB-5. MS ion ratios distinguish from α-amyrin.",ms:"m/z 203 base: retro-Diels-Alder of oleanane skeleton. KEY: m/z 203/218 ratio >1 confirms β-amyrin. MW 426 identical to α-amyrin. Ratio inversion is the ONLY MS diagnostic.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C559706&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"δ-Amyrin",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3180,ions:[203,218,257,189,426],b:203,mol:426,deriv:"None (or TMS → MW 498)",frac:"Tomato wax — minor (<5%); third amyrin isomer",fid:"Minor shoulder eluting slightly before β-amyrin.",ms:"m/z 203 base (similar to β-amyrin). Distinguish by RI offset and authentic standard co-injection.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C2345130&Mask=200",doi:"10.1111/j.1365-313X.2004.02102.x"},
+{n:"Lupeol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3265,ions:[189,203,218,257,426],b:189,mol:426,deriv:"None (or TMS → MW 498)",frac:"Tomato wax — minor; also in apple/pear cuticle",fid:"Elutes slightly after α-amyrin. Confirmed by m/z 189 dominance.",ms:"m/z 189 base: retro-Diels-Alder of lupane skeleton. m/z 203 and 218 secondary. m/z 189 dominance distinguishes from amyrins.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C545471&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Taraxerol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3230,ions:[203,189,218,257,426],b:203,mol:426,deriv:"None",frac:"Tomato wax — minor",fid:"Elutes in amyrin cluster region. Taraxerane skeleton.",ms:"m/z 203 base (oleanane-type RDA). MW 426. Very similar to β-amyrin — RI and library match essential.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C514181&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Taraxasterol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3235,ions:[189,203,218,257,426],b:189,mol:426,deriv:"None",frac:"Tomato wax — minor",fid:"Close to taraxerol in elution. MS essential.",ms:"m/z 189 base. MW 426.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C4445914&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"ψ-Taraxasterol (Multiflorenol)",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3240,ions:[189,203,218,426],b:189,mol:426,deriv:"None",frac:"Tomato wax — minor",fid:"Minor peak in late triterpenoid cluster.",ms:"m/z 189 base. MW 426.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C19407764&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Germanicol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3215,ions:[203,218,189,257,426],b:203,mol:426,deriv:"None",frac:"Tomato wax — minor",fid:"Oleanane-type triterpenol in β-amyrin region.",ms:"m/z 203 base. MW 426. Library match essential.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C511160&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Bauerenol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3210,ions:[203,218,189,426],b:203,mol:426,deriv:"None",frac:"Tomato wax — minor",fid:"Bauerane skeleton. Minor peak adjacent to amyrins.",ms:"m/z 203 base. MW 426. Library match essential.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C514158&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Cycloartenol",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3290,ions:[229,218,203,257,426],b:229,mol:498,deriv:"TMS → MW 498",frac:"Tomato wax — minor; sterol biosynthesis precursor",fid:"Cyclopropyl ring-containing triterpene. Elutes after most pentacyclic triterpenoids.",ms:"m/z 229 base (cycloartenol-specific from cyclopropyl ring opening). MW 426 (498 as TMS). m/z 229 dominance distinguishes from all amyrins.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C469398&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Ursolic acid",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₄₈O₃",mw:456,ri:3350,ions:[203,218,189,133,586],b:203,mol:586,deriv:"TMS → MW 586 (bis-TMS)",frac:"Apple wax — dominant (40–70%); minor in tomato/grape",fid:"The dominant compound in apple cuticle wax. Very late eluter.",ms:"As bis-TMS: m/z 203 base (ursane RDA). MW-TMS 586. m/z 133. Distinguish from oleanolic by RI (ursolic elutes slightly later).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C77521&Mask=200",doi:"10.1021/jf503099r"},
+{n:"Oleanolic acid",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₄₈O₃",mw:456,ri:3335,ions:[203,218,320,203,586],b:203,mol:586,deriv:"TMS → MW 586 (bis-TMS)",frac:"Grape/apple/pear wax — major; minor in tomato",fid:"Very late eluter. Co-elutes with ursolic unless column efficiency is high.",ms:"As bis-TMS: m/z 203 base. MW-TMS 586 (same as ursolic). Distinguish by slightly earlier RI and m/z 320 specific minor fragment.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C50824&Mask=200",doi:"10.1021/jf503099r"},
+{n:"Betulin",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O₂",mw:442,ri:3380,ions:[189,203,207,424,442],b:189,mol:514,deriv:"TMS → MW 514 (bis-TMS)",frac:"Birch bark and some apple/pear cuticle — moderate",fid:"Lupane-type diol. Late-eluting broad peak.",ms:"As bis-TMS: m/z 189 base (lupane RDA). MW-TMS 514. m/z 424 ([M-OH]⁺). Lupane base m/z 189 distinguishes from ursolic/oleanolic (m/z 203).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C473983&Mask=200",doi:"10.1021/jf503099r"},
+{n:"Friedelin",cls:"Triterpenoid",css:"cls-trit",f:"C₃₀H₅₀O",mw:426,ri:3260,ions:[229,203,189,271,426],b:229,mol:426,deriv:"None (ketone — no TMS)",frac:"Cork/grape cuticle — moderate; trace in fruit wax",fid:"Triterpenoid ketone. No TMS needed. Distinct fragmentation from triterpenols.",ms:"m/z 229 base (friedelane skeleton α-cleavage at ketone). MW 426. Absence of m/z 75 confirms ketone, not alcohol.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C559740&Mask=200",doi:"10.1021/acs.jafc.5b00013"},
+/* STEROLS */
+{n:"Cholesterol",cls:"Sterol",css:"cls-ster",f:"C₂₇H₄₆O",mw:386,ri:3140,ions:[368,353,215,147,458],b:368,mol:458,deriv:"TMS → MW 458",frac:"Wax — trace; animal/contamination marker in plant wax",fid:"Elutes in late triterpenoid/sterol region. As TMS ether.",ms:"As TMS: m/z 368 base ([M-90]⁺). m/z 353 ([M-15-90]⁺). MW-TMS 458. m/z 215 (sterol side-chain). High-mass losses diagnostic for sterols.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C57885&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Campesterol",cls:"Sterol",css:"cls-ster",f:"C₂₈H₄₈O",mw:400,ri:3280,ions:[382,367,213,472,400],b:382,mol:472,deriv:"TMS → MW 472",frac:"Tomato/apple wax — minor plant sterol",fid:"Elutes in early sterol cluster, before stigmasterol. C28 phytosterol.",ms:"As TMS: m/z 382 base ([M-90]⁺). m/z 367 ([M-15-90]⁺). MW-TMS 472. m/z 213 (C28 sterol side-chain).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C474624&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Stigmasterol",cls:"Sterol",css:"cls-ster",f:"C₂₉H₄₈O",mw:412,ri:3300,ions:[394,379,255,484,412],b:394,mol:484,deriv:"TMS → MW 484",frac:"Tomato/apple wax — minor plant sterol",fid:"Elutes near β-sitosterol. Distinguished by slightly earlier RI and different side-chain fragmentation.",ms:"As TMS: m/z 394 base ([M-90]⁺). m/z 379 ([M-15-90]⁺). MW-TMS 484. m/z 255 (Δ22 double bond fragment).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C83481&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"β-Sitosterol",cls:"Sterol",css:"cls-ster",f:"C₂₉H₅₀O",mw:414,ri:3310,ions:[396,381,255,486,414],b:396,mol:486,deriv:"TMS → MW 486",frac:"Tomato/apple wax — minor; most common plant phytosterol",fid:"Elutes after stigmasterol. Often the largest sterol peak in fruit wax.",ms:"As TMS: m/z 396 base ([M-90]⁺). m/z 381 ([M-15-90]⁺). MW-TMS 486. m/z 255 (side-chain at C20-C22).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C83461&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+/* CUTIN MONOMERS */
+{n:"16-Hydroxyhexadecanoic acid (ω-OH C16:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₆H₃₂O₃",mw:272,ri:2320,ions:[299,371,147,73,416],b:299,mol:416,deriv:"TMS (bis-TMS → MW 416)",frac:"Cutin — ~2–6% of monomers; common ω-hydroxy acid",fid:"Early peak in cutin monomer profile. Monohydroxy acid.",ms:"bis-TMS: MW 416. m/z 299 base: α-cleavage at C16-OTMS. m/z 371 ([M-45]⁺). m/z 147 (carboxylate TMS fragment). m/z 73 TMS cation.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C506138&Mask=200",doi:"10.3389/fchem.2025.1734422"},
+{n:"8,16-Dihydroxyhexadecanoic acid (8,16-diOH C16:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₆H₃₂O₄",mw:288,ri:2555,ions:[303,261,147,73,504],b:303,mol:504,deriv:"TMS (tris-TMS → MW 504)",frac:"Cutin — minor isomer of diOH C16; detected in tomato cutin",fid:"Elutes just before the dominant 10,16-diOH isomer.",ms:"tris-TMS: MW 504. m/z 303 (α-cleavage at C8-OTMS). Distinguished from 10,16-diOH by base ion (303 vs 331).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C55499040&Mask=200",doi:"10.1093/jxb/err313"},
+{n:"10,16-Dihydroxyhexadecanoic acid (10,16-diOH C16:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₆H₃₂O₄",mw:288,ri:2580,ions:[331,275,147,129,73],b:331,mol:504,deriv:"TMS (tris-TMS → MW 504)",frac:"Tomato cutin — 54–82% of all monomers; THE dominant cutin compound",fid:"THE LARGEST FID peak in any tomato cutin chromatogram. ~22 minutes in standard programme (50→300°C at 6°C/min on DB-5 30m).",ms:"tris-TMS: MW 504. m/z 331 BASE: α-cleavage at C10-OTMS (midchain OH). m/z 275: α-cleavage at C16-OTMS. TWIN DIAGNOSTIC IONS: 331 AND 275 together = 100% specific for this compound. m/z 73 TMS cation. Ratio 331/275 ≈ 1.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C55499042&Mask=200",doi:"10.3389/fchem.2025.1734422"},
+{n:"9,10,16-Trihydroxyhexadecanoic acid (9,10,16-triOH C16:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₆H₃₂O₅",mw:304,ri:2700,ions:[359,303,147,129,73],b:359,mol:592,deriv:"TMS (tetrakis-TMS → MW 592)",frac:"Tomato cutin — <5%; increases in red-ripe fruit; marker of cutin maturation",fid:"Late-eluting peak after dominant 10,16-diOH acid. Increases proportionally to ripeness.",ms:"tetrakis-TMS: MW 592. m/z 359 base: α-cleavage at C9–C10 vicinal diol. m/z 303. +88 Da offset from diOH compound (592 vs 504) confirms extra OTMS.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C5765599&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"Hexadecanedioic acid (C16 α,ω-diacid)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₆H₃₀O₄",mw:286,ri:2500,ions:[313,285,241,147,73],b:313,mol:430,deriv:"TMS (bis-TMS → MW 430)",frac:"Cutin/suberin — minor; suberin-like diacid",fid:"Symmetric sharp peak in cutin monomer region. Presence may indicate suberin co-extraction.",ms:"bis-TMS: MW 430. m/z 313 base ([M-TMSOH]⁺). m/z 285. m/z 241. Both carboxyl groups TMS-esterified.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C505485&Mask=200",doi:"10.1093/jxb/err313"},
+{n:"18-Hydroxyoctadecanoic acid (ω-OH C18:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₈H₃₆O₃",mw:300,ri:2490,ions:[327,399,147,73,444],b:327,mol:444,deriv:"TMS (bis-TMS → MW 444)",frac:"Cutin — minor; suberin dominant; marker for Arabidopsis-type cutin vs tomato",fid:"Elutes before 10,16-diOH C16 peak. C18 ω-hydroxy acid is dominant in Arabidopsis-type cutin.",ms:"bis-TMS: MW 444. m/z 327 base ([M-TMSOH]⁺ from ω-end cleavage). m/z 399. m/z 73.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C1246553&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"9,10-Epoxy-18-hydroxyoctadecanoic acid",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₈H₃₄O₄",mw:314,ri:2750,ions:[371,297,147,73,530],b:371,mol:530,deriv:"TMS (tris-TMS → MW 530)",frac:"Cutin — minor C18 epoxide monomer; increases in ripe tomato",fid:"Minor peak in late C18 monomer cluster.",ms:"tris-TMS: MW 530. m/z 371 base. m/z 297. Epoxide opening during EI gives characteristic rearrangement ions.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C25618556&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+{n:"9,10,18-Trihydroxyoctadecanoic acid (9,10,18-triOH C18:0)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₈H₃₆O₅",mw:332,ri:2780,ions:[387,331,147,129,73],b:387,mol:620,deriv:"TMS (tetrakis-TMS → MW 620)",frac:"Tomato cutin — minor C18 monomer; increases in red-ripe fruit",fid:"Distinct peak after C16 triOH acid. +28 Da offset confirms C18 chain.",ms:"tetrakis-TMS: MW 620. m/z 387 base: α-cleavage at C9–C10 vicinal diol (C18 version). m/z 331. m/z 73.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C5765600&Mask=200",doi:"10.1104/pp.107.098947"},
+{n:"Octadecanedioic acid (C18 α,ω-diacid)",cls:"Cutin monomer",css:"cls-cutin",f:"C₁₈H₃₄O₄",mw:314,ri:2640,ions:[341,313,269,147,73],b:341,mol:458,deriv:"TMS (bis-TMS → MW 458)",frac:"Cutin/suberin — minor; Arabidopsis leaf cutin dominant; minor in tomato fruit",fid:"Minor peak in acid cluster.",ms:"bis-TMS: MW 458. m/z 341 base ([M-TMSOH]⁺). m/z 313. m/z 73.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C3080792&Mask=200",doi:"10.1093/jxb/err313"},
+{n:"Glycerol",cls:"Cutin monomer",css:"cls-cutin",f:"C₃H₈O₃",mw:92,ri:1310,ions:[73,147,205,218,145],b:73,mol:218,deriv:"TMS (tris-TMS → MW 218)",frac:"Cutin — structural component; released on saponification",fid:"Very early eluting (RI~1310 as tris-TMS). Small peak near solvent front.",ms:"tris-TMS: MW 218. m/z 73 base (TMS cation). m/z 147. m/z 205 ([M-13]⁺). The combination 73+147+218 diagnostic for glycerol-TMS.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C56815&Mask=200",doi:"10.1007/3-540-45302-1_1"},
+/* PHENOLICS */
+{n:"p-Hydroxybenzoic acid",cls:"Phenolic",css:"cls-phen",f:"C₇H₆O₃",mw:138,ri:1650,ions:[267,252,282,193,73],b:267,mol:282,deriv:"TMS (bis-TMS → MW 282)",frac:"Tomato cuticle phenolic — minor; Lara et al. 2019",fid:"Earliest phenolic peak.",ms:"bis-TMS: MW 282. m/z 267 base ([M-15]⁺). m/z 252 ([M-30]⁺). m/z 73.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C99966&Mask=200",doi:"10.1016/j.postharvbio.2018.12.018"},
+{n:"p-Coumaric acid (trans-4-hydroxycinnamic acid)",cls:"Phenolic",css:"cls-phen",f:"C₉H₈O₃",mw:164,ri:1800,ions:[147,219,163,308,73],b:147,mol:308,deriv:"TMS (bis-TMS → MW 308)",frac:"Tomato cuticle — 0.8–7.5%; THE main phenolic in cutin polymer; increases to red-ripe",fid:"Sharp, early-eluting phenolic peak. Largest phenolic peak in tomato cuticle. Developmentally regulated — increases during ripening.",ms:"bis-TMS: MW 308. m/z 147 base: p-OTMS-phenyl cation — highly diagnostic for p-hydroxycinnamic acid TMS. m/z 219 ([M-89]⁺). m/z 163.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C501984&Mask=200",doi:"10.1093/jxb/eru353"},
+{n:"Ferulic acid (4-hydroxy-3-methoxycinnamic acid)",cls:"Phenolic",css:"cls-phen",f:"C₁₀H₁₀O₄",mw:194,ri:1920,ions:[177,338,249,73,162],b:177,mol:338,deriv:"TMS (bis-TMS → MW 338)",frac:"Cuticle — minor phenolic; suberin fractions; cell wall component",fid:"Elutes after p-coumaric acid.",ms:"bis-TMS: MW 338. m/z 177 base (methoxy-TMS-phenyl cation, +30 Da vs coumaric m/z 147). m/z 249 ([M-89]⁺).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C537984&Mask=200",doi:"10.1093/jxb/eru353"},
+{n:"Caffeic acid (3,4-dihydroxycinnamic acid)",cls:"Phenolic",css:"cls-phen",f:"C₉H₈O₄",mw:180,ri:1870,ions:[219,219,163,324,73],b:219,mol:324,deriv:"TMS (tris-TMS → MW 324)",frac:"Cuticle — trace phenolic; grape/apple cuticle",fid:"Elutes between p-coumaric and ferulic.",ms:"tris-TMS: MW 324. m/z 219 base. m/z 163. Three TMS groups.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C331395&Mask=200",doi:"10.1093/jxb/eru353"},
+{n:"Sinapic acid (3,5-dimethoxy-4-hydroxycinnamic acid)",cls:"Phenolic",css:"cls-phen",f:"C₁₁H₁₂O₅",mw:224,ri:2060,ions:[207,368,239,73,368],b:207,mol:368,deriv:"TMS (bis-TMS → MW 368)",frac:"Cuticle — minor; Arabidopsis and some fruit cuticle",fid:"Later eluting cinnamic acid derivative.",ms:"bis-TMS: MW 368. m/z 207 base (dimethoxy-TMS-phenyl cation). m/z 239.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C530597&Mask=200",doi:"10.1093/jxb/eru353"},
+{n:"Naringenin-chalcone (chalconaringenin)",cls:"Phenolic",css:"cls-phen",f:"C₁₅H₁₂O₅",mw:272,ri:2250,ions:[179,151,271,73,488],b:179,mol:488,deriv:"TMS (tris-TMS → MW 488)",frac:"Tomato cuticle — flavonoid embedded in cutin; UV-protective; specific to tomato",fid:"Broad, late-eluting peak in phenolic/flavonoid region. Specific to tomato — not found in most other fruit cuticles.",ms:"tris-TMS: MW 488. m/z 179 base (B-ring chalcone fragment). m/z 151. MW 488. m/z 179 distinguishes chalcone from naringenin.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C6515038&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Naringenin",cls:"Phenolic",css:"cls-phen",f:"C₁₅H₁₂O₅",mw:272,ri:2270,ions:[179,151,271,73,488],b:179,mol:488,deriv:"TMS (tris-TMS → MW 488)",frac:"Tomato cuticle — trace artifact from chalcone; also in apple peel",fid:"Very close to chalconaringenin (RI 2250). Chalcone→flavanone isomerisation can occur at high injector temperatures.",ms:"tris-TMS: MW 488 identical to chalcone. Distinguish by slightly later RI and m/z 179/151 ratio differences.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C480413&Mask=200",doi:"10.1007/s00217-004-0943-0"},
+{n:"Quercetin",cls:"Phenolic",css:"cls-phen",f:"C₁₅H₁₀O₇",mw:302,ri:2450,ions:[179,151,269,73,590],b:179,mol:590,deriv:"TMS (pentakis-TMS → MW 590)",frac:"Apple/grape cuticle — moderate flavonol; minor in tomato",fid:"Late-eluting flavonol. Five OH groups → pentakis-TMS derivative.",ms:"pentakis-TMS: MW 590. m/z 179 base. m/z 151. High MW from multiple TMS groups.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C117396&Mask=200",doi:"10.1021/jf503099r"},
+/* TERPENES */
+{n:"α-Farnesene",cls:"Terpene",css:"cls-terp",f:"C₁₅H₂₄",mw:204,ri:1505,ions:[93,119,69,41,204],b:93,mol:204,deriv:"None",frac:"Apple wax — dominant volatile sesquiterpene; oxidation → superficial scald; NOT in tomato",fid:"Very early eluting sesquiterpene. In apple, biosynthesised during storage; oxidation products cause superficial scald.",ms:"m/z 93 base (terpene cyclopentadienyl cation). MW 204. m/z 69, 119, 41.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C502613&Mask=200",doi:"10.1021/jf503099r"},
+{n:"β-Caryophyllene",cls:"Terpene",css:"cls-terp",f:"C₁₅H₂₄",mw:204,ri:1580,ions:[69,93,133,161,204],b:69,mol:204,deriv:"None",frac:"Fruit wax — minor sesquiterpene; tomato and citrus extracts",fid:"Early-eluting bicyclic sesquiterpene. Elutes after α-farnesene.",ms:"m/z 69 base. MW 204. m/z 133 ([M-71]⁺). Bicyclic terpene differs from acyclic α-farnesene (m/z 93).",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C87440&Mask=200",doi:"10.1021/acs.jafc.5b00013"},
+{n:"Squalane (internal standard / contaminant)",cls:"Contaminant",css:"cls-contam",f:"C₃₀H₆₂",mw:422,ri:2996,ions:[57,71,85,99,422],b:57,mol:422,deriv:"None",frac:"Analytical IS; also contamination from skin contact (human sebum)",fid:"Elutes very close to n-C30 alkane (RI≈2996 vs C30=3000). Same base peak m/z 57 as n-alkanes but slight RI offset.",ms:"m/z 57 base. MW 422 identical to n-C30. Squalane has irregular isoprenoid branching giving slightly lower RI than n-C30.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C111013&Mask=200",doi:"10.18434/T4D303"},
+/* CONTAMINANTS */
+{n:"Hexamethylcyclotrisiloxane (D3 siloxane)",cls:"Contaminant",css:"cls-contam",f:"C₆H₁₈O₃Si₃",mw:222,ri:1000,ions:[207,133,191,73,222],b:207,mol:222,deriv:"None — instrument artifact",frac:"Artifact — GC column bleed / BSTFA/MSTFA impurity",fid:"Sharp early peak or rising baseline. NOT a biological compound.",ms:"m/z 207 base: cyclosiloxane fragment. Absolutely diagnostic for polysiloxane column bleed. m/z 133 and 191 confirm cyclosiloxane. MW 222.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C541059&Mask=200",doi:"10.18434/T4D303"},
+{n:"Octamethylcyclotetrasiloxane (D4 siloxane)",cls:"Contaminant",css:"cls-contam",f:"C₈H₂₄O₄Si₄",mw:296,ri:1150,ions:[281,265,207,73,296],b:281,mol:296,deriv:"None — artifact",frac:"Artifact — very common GC background; column bleed from polysiloxane phases",fid:"Common background peak. Can appear in any GC-MS analysis.",ms:"m/z 281 base: D4 ring fragment. m/z 265. m/z 207 (shared with D3/D5). MW 296.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C556672&Mask=200",doi:"10.18434/T4D303"},
+{n:"Decamethylcyclopentasiloxane (D5 siloxane)",cls:"Contaminant",css:"cls-contam",f:"C₁₀H₃₀O₅Si₅",mw:370,ri:1260,ions:[355,267,207,73,370],b:355,mol:370,deriv:"None — artifact",frac:"Artifact — column bleed; also from cosmetics",fid:"Third major siloxane peak. The D3/D4/D5 triplet is a telltale sign of siloxane column bleed.",ms:"m/z 355 base ([M-15]⁺). m/z 267. m/z 207. MW 370.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C541023&Mask=200",doi:"10.18434/T4D303"},
+{n:"Di-n-butyl phthalate (DBP, plasticizer)",cls:"Contaminant",css:"cls-contam",f:"C₁₆H₂₂O₄",mw:278,ri:2500,ions:[149,150,205,223,278],b:149,mol:278,deriv:"None — contamination",frac:"Artifact — ubiquitous plasticizer from plastic tubes, syringes, vial caps",fid:"CRITICAL: m/z 149 base absolutely diagnostic for phthalate plasticizers. Never assign to a biological compound.",ms:"m/z 149 base: protonated phthalic anhydride — universal phthalate marker. m/z 205. MW 278. ANY peak with m/z 149 dominant base peak is a phthalate.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C84742&Mask=200",doi:"10.18434/T4D303"},
+{n:"Di(2-ethylhexyl) phthalate (DEHP, plasticizer)",cls:"Contaminant",css:"cls-contam",f:"C₂₄H₃₈O₄",mw:390,ri:2960,ions:[149,167,279,167,390],b:149,mol:390,deriv:"None — contamination",frac:"Artifact — most common plasticizer contamination in GC-MS; from plastic materials",fid:"Large-chain phthalate; elutes in fatty acid/triterpenoid region.",ms:"m/z 149 base (universal phthalate marker). m/z 167. MW 390. IDENTICAL diagnostic pattern to all phthalates — only MW distinguishes DBP from DEHP.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C117817&Mask=200",doi:"10.18434/T4D303"},
+{n:"Nonadecanoic acid (internal standard)",cls:"Contaminant",css:"cls-contam",f:"C₁₉H₃₈O₂",mw:298,ri:2085,ions:[132,73,283,214,370],b:132,mol:370,deriv:"TMS → MW 370",frac:"Analytical — intentionally added internal standard (Isaacson et al. 2009 method)",fid:"Appears as a foreign peak between C18 and C20 fatty acids. Odd-chain fatty acid not normally found in plant cuticle.",ms:"TMS ester: m/z 132 base (McLafferty). MW-TMS 370. Presence is deliberate — used for quantification.",nist:"https://webbook.nist.gov/cgi/cbook.cgi?ID=C646308&Mask=200",doi:"10.1093/pcp/pcp056"}
+];
+
+// ═══════════════════════════════════════════
+//  TMS ENRICHMENT
+// ═══════════════════════════════════════════
+(function enrichData(){
+  data.forEach(c=>{
+    if(c.nTMS!==undefined) return;
+    const n0=['n-Alkane','Branched Alkane','Alkadiene','Aldehyde','Terpene','Wax Ester','Contaminant'];
+    if(n0.includes(c.cls)){c.nTMS=0;c.molTMS=null;c.bTMS=c.b;c.ionsTMS=[];c.msTMS='No active H groups. BSTFA/MSTFA has NO effect.';return;}
+    let n=1;
+    if(c.cls==='Cutin monomer') n=2;
+    if(c.cls==='Phenolic') n=2;
+    if(c.n.includes('Trihydroxy')||c.n.includes('triOH')||c.n.includes('9,10,16')||c.n.includes('9,10,18')) n=4;
+    if(c.n.includes('Dihydroxy')||c.n.includes('diOH')||c.n.includes('10,16')||c.n.includes('8,16')) n=3;
+    if(c.n.includes('Glycerol')) n=3;
+    if(c.n.includes('Diacid')||c.n.includes('diacid')) n=2;
+    if(c.n.includes('Epoxy')) n=3;
+    if(c.n.includes('Ursolic')||c.n.includes('Oleanolic')||c.n.includes('Betulin')) n=2;
+    if(c.n.includes('Quercetin')) n=5;
+    if(c.n.includes('Naringenin')||c.n.includes('chalcone')) n=3;
+    if(c.n.includes('Friedelin')){c.nTMS=0;c.molTMS=null;c.bTMS=c.b;c.ionsTMS=[];c.msTMS='Ketone — NOT silylated.';return;}
+    c.nTMS=n;
+    c.molTMS=c.mw+n*72;
+    if(c.cls==='n-Alkanol'){c.molTMS=null;}
+    c.bTMS=c.b;
+    if(c.cls==='Fatty acid') c.bTMS=132;
+    if(c.cls==='n-Alkanol') c.bTMS=75;
+    if(c.cls==='Sterol'){c.bTMS=c.mol?c.mol-18:c.b;}
+    if(c.n.includes('Coumaric')) c.bTMS=147;
+    if(c.n.includes('Ferulic')) c.bTMS=177;
+    if(c.n.includes('Naringenin')||c.n.includes('chalcone')||c.n.includes('Quercetin')) c.bTMS=179;
+    c.ionsTMS=c.molTMS?[c.molTMS]:[];
+    c.msTMS='TMS: '+n+' group'+(n>1?'s':'')+' (+'+n*72+' Da). Derivatised M⁺='+(c.molTMS||'none')+'. TMS base peak='+c.bTMS+'. Native: mol.ion='+(c.mol||'n/a')+', base='+c.b+'.';
+  });
+})();
+
+// ═══════════════════════════════════════════
+//  STATE & FILTER
+// ═══════════════════════════════════════════
+let filter='all';
+let tmsMode=false;
+
+function setF(f,btn){
+  filter=f;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function clearAll(){
+  document.getElementById('q').value='';
+  document.getElementById('ionQ').value='';
+  document.getElementById('riMin').value='';
+  document.getElementById('riMax').value='';
+  filter='all';
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.querySelector('.tabs .tab').classList.add('on');
+  render();
+}
+
+function toggleTMS(){
+  tmsMode=!tmsMode;
+  const btn=document.getElementById('tmsBtn');
+  btn.classList.toggle('on',tmsMode);
+  btn.textContent='TMS ions: '+(tmsMode?'ON':'OFF');
+  render();
+}
+
+// ── Parse multi-ion input (supports >, comma, space) ──
+function parseIonList(str){
+  if(!str||!str.trim()) return [];
+  return str.split(/[>,\s]+/).map(v=>parseInt(v.trim())).filter(v=>!isNaN(v)&&v>0);
+}
+
+function render(){
+  const textQ=document.getElementById('q').value.toLowerCase().trim();
+  const ionStr=document.getElementById('ionQ').value.trim();
+  const ionList=parseIonList(ionStr);
+  const riMin=parseInt(document.getElementById('riMin').value)||null;
+  const riMax=parseInt(document.getElementById('riMax').value)||null;
+
+  // Score and filter
+  let rows=data.map(c=>{
+    // Class filter
+    if(filter!=='all'&&c.cls!==filter) return null;
+    // Text filter
+    if(textQ){
+      const hay=[c.n,c.cls,c.f,c.frac,c.ms,c.msTMS||'',c.fid,String(c.ri)].join(' ').toLowerCase();
+      if(!hay.includes(textQ)) return null;
+    }
+    // RI filter
+    if(riMin!==null&&c.ri<riMin) return null;
+    if(riMax!==null&&c.ri>riMax) return null;
+
+    // Ion matching
+    let matchCount=0;
+    let matchedIons=[];
+    if(ionList.length>0){
+      const allIons=[...c.ions,c.b,c.mol,c.bTMS,c.molTMS,...(c.ionsTMS||[])].filter(x=>x!=null);
+      ionList.forEach(ion=>{
+        if(allIons.includes(ion)){matchCount++;matchedIons.push(ion);}
+      });
+      if(matchCount===0) return null; // must match at least one
+    }
+    return {c, matchCount, matchedIons};
+  }).filter(x=>x!==null);
+
+  // Sort: if multi-ion query, sort by match count desc; else keep original order (by ri)
+  if(ionList.length>0){
+    rows.sort((a,b)=>b.matchCount-a.matchCount||(a.c.ri-b.c.ri));
+  }
+
+  document.getElementById('cnt').innerHTML=
+    '<strong>'+rows.length+'</strong> compound'+(rows.length!==1?'s':'')+
+    ' found (of '+data.length+' total)'+
+    (tmsMode?' &nbsp;·&nbsp; <span style="color:var(--purple)">TMS mode ON</span>':'')+
+    (ionList.length>1?' &nbsp;·&nbsp; <span style="color:var(--amber)">sorted by ion-match count</span>':'');
+
+  const tb=document.getElementById('tb');
+  tb.innerHTML='';
+
+  rows.forEach(({c,matchCount,matchedIons})=>{
+    const realIdx=data.indexOf(c);
+    const ri_pct=Math.round(Math.min(100,Math.max(2,((c.ri-1000)/3500)*100)));
+
+    let ionHtml=c.ions.map(m=>{
+      let cl='ion-tag';
+      if(m===c.b) cl+=' b';
+      if(m===c.mol) cl+=' m';
+      // Highlight if this ion was in the search query and matched
+      if(matchedIons.includes(m)) cl+=' hit';
+      return `<span class="${cl}">${m}</span>`;
+    }).join('');
+
+    if(c.nTMS>0){
+      if(tmsMode&&c.ionsTMS&&c.ionsTMS.length){
+        c.ionsTMS.forEach(m=>{
+          let cl='ion-tag';
+          if(m===c.bTMS) cl+=' bt';
+          if(m===c.molTMS) cl+=' mt';
+          if(matchedIons.includes(m)) cl+=' hit';
+          ionHtml+=`<span class="${cl}">${m}</span>`;
+        });
+      } else if(c.molTMS){
+        let cl='ion-tag mt';
+        if(matchedIons.includes(c.molTMS)) cl+=' hit';
+        ionHtml+=`<span class="${cl}" title="TMS M⁺ (+${c.nTMS}×72 Da)">${c.molTMS}<sup style="font-size:8px">T</sup></span>`;
+      }
+      if(tmsMode&&c.bTMS&&c.bTMS!==c.b){
+        let cl='ion-tag bt';
+        if(matchedIons.includes(c.bTMS)) cl+=' hit';
+        ionHtml+=`<span class="${cl}">${c.bTMS}<sup style="font-size:8px">Tb</sup></span>`;
+      }
+    }
+
+    // Match count pill
+    const matchPill=ionList.length>0&&matchCount>0
+      ?`<span class="match-pill">${matchCount}/${ionList.length} ions</span>`:'';
+
+    const mwStr=c.nTMS>0
+      ?`${c.mw} Da · ${c.molTMS||'no M⁺'} (${c.nTMS}TMS)`
+      :`${c.mw} Da`;
+    const doiUrl=(c.doi&&c.doi.startsWith('10.'))?'https://doi.org/'+c.doi:(c.doi||'#');
+
+    const tr=document.createElement('tr');
+    tr.id='r'+realIdx;
+    tr.innerHTML=`
+      <td><div class="compound-name">${c.n}${matchPill}</div><div class="compound-formula">${c.f} · ${mwStr}</div></td>
+      <td><span class="cls ${c.css}">${c.cls}</span></td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text2);">${c.f}<br><span style="color:var(--text3)">${c.mw} Da${c.nTMS>0?' · '+c.molTMS+'('+c.nTMS+'TMS)':''}</span></td>
+      <td>
+        <div class="ri-num">${c.ri}</div>
+        <div class="ri-bar"><div class="ri-fill" style="width:${ri_pct}%"></div></div>
+      </td>
+      <td><div class="ions">${ionHtml}</div></td>
+      <td style="font-size:11px;color:var(--text2);">${(c.deriv||'').split('(')[0].trim()}</td>
+      <td style="font-size:11px;color:var(--text2);max-width:200px;">${c.frac}</td>
+      <td style="white-space:nowrap;">
+        ${c.nist?`<a class="ext" href="${c.nist}" target="_blank">NIST ↗</a><br>`:''}
+        ${c.doi?`<a class="ext" href="${doiUrl}" target="_blank">DOI ↗</a>`:''}
+      </td>`;
+
+    tr.onclick=e=>{
+      if(e.target.tagName==='A') return;
+      const existing=document.getElementById('d'+realIdx);
+      const isOpen=existing&&existing.style.display!=='none';
+      document.querySelectorAll('[id^="d"]').forEach(el=>el.remove());
+      document.querySelectorAll('tbody tr').forEach(r=>r.classList.remove('expanded'));
+      if(!isOpen){
+        tr.classList.add('expanded');
+        const tmsBlock=c.nTMS>0
+          ?`<div class="tms-box"><strong>TMS silylation: ${c.nTMS} group${c.nTMS>1?'s':''} (+${c.nTMS*72} Da) → derivatised M⁺ = ${c.molTMS||'none'} | TMS base peak = ${c.bTMS}</strong><br>${c.msTMS||''}</div>`
+          :`<div class="no-tms-box"><strong>NOT silylated by BSTFA/MSTFA</strong> — no active H groups. Spectrum identical before and after TMS treatment. ${c.msTMS||''}</div>`;
+        const dtr=document.createElement('tr');
+        dtr.id='d'+realIdx;
+        dtr.className='detail-row';
+        dtr.innerHTML=`<td colspan="8"><div class="detail-inner">
+          <div class="detail-grid">
+            <div>
+              <div class="det-lbl">Chromatography / FID Peak Notes</div>
+              <div class="det-text">${c.fid}</div>
+              <div class="det-lbl">Derivatization Protocol</div>
+              <div class="det-text">${c.deriv||'—'}</div>
+              <div class="det-lbl">Source / Biological Abundance</div>
+              <div class="det-text">${c.frac}</div>
+            </div>
+            <div>
+              <div class="det-lbl">EI Mass Spectrum Interpretation</div>
+              <div class="det-text">${c.ms}</div>
+              <div class="det-lbl">TMS Silylation Effect</div>
+              ${tmsBlock}
+              <div class="det-lbl">References</div>
+              <div class="det-text">
+                ${c.nist?`<a href="${c.nist}" target="_blank" class="ext">→ Verify at NIST WebBook ↗</a><br>`:''}
+                ${c.doi?`<a href="${doiUrl}" target="_blank" class="ext">→ doi:${c.doi} ↗</a>`:''}
+              </div>
+              <div class="det-lbl">Kovats RI</div>
+              <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue)">${c.ri}</div>
+              <div class="ri-bar" style="width:100%;margin-top:4px;"><div class="ri-fill" style="width:${ri_pct}%"></div></div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px;">
+                ${c.nTMS>0
+                  ?`TMS search: mol.ion=<strong>${c.molTMS||'none'}</strong>, base=<strong>${c.bTMS}</strong> | Native: mol.ion=<strong>${c.mol||'none'}</strong>, base=<strong>${c.b}</strong>`
+                  :'TMS has NO effect on this compound — identical ions in both native and TMS runs'}
+              </div>
+            </div>
+          </div>
+        </div></td>`;
+        tr.after(dtr);
+        dtr.scrollIntoView({behavior:'smooth',block:'nearest'});
+      }
+    };
+    tb.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  LOCAL SMART PEAK MATCHER (no API needed)
+// ═══════════════════════════════════════════
+
+// Scoring weights: first ion in list = highest priority
+function getWeight(i){ return Math.max(6-i, 2); } // 6,5,4,3,2,2,2...
+
+function scoreCompound(c, ionList, riTarget){
+  // All ions for this compound (native + TMS)
+  const allIons=new Set([...c.ions, c.b, c.mol, c.bTMS, c.molTMS, ...(c.ionsTMS||[])].filter(x=>x!=null));
+  let score=0;
+  let matched=[];
+  let unmatched=[];
+  let totalPossible=0;
+
+  ionList.forEach((ion,i)=>{
+    const w=getWeight(i);
+    totalPossible+=w;
+    if(allIons.has(ion)){ score+=w; matched.push(ion); }
+    else { unmatched.push(ion); }
+  });
+
+  // RI bonus (only counts if at least one ion matched)
+  let riBonus=0;
+  if(riTarget!==null&&matched.length>0){
+    const diff=Math.abs(c.ri-riTarget);
+    if(diff<=10) riBonus=6;
+    else if(diff<=30) riBonus=4;
+    else if(diff<=80) riBonus=2;
+    else if(diff<=150) riBonus=1;
+    score+=riBonus;
+  }
+
+  // Bonus: base peak (first ion in list) matched the library base peak
+  const basePeakMatch=ionList.length>0&&(ionList[0]===c.b||ionList[0]===c.bTMS);
+  if(basePeakMatch) score+=3;
+
+  return { score, totalPossible, matched, unmatched, riBonus, basePeakMatch };
+}
+
+function runSmartMatcher(){
+  const ionStr=document.getElementById('smIons').value.trim();
+  const riStr=document.getElementById('smRI').value.trim();
+  const riTarget=parseInt(riStr)||null;
+  const ionList=parseIonList(ionStr);
+
+  const res=document.getElementById('smResults');
+
+  if(ionList.length===0){
+    res.className='sm-results visible';
+    res.innerHTML='<div class="sm-no-result">⚠ Please enter at least one m/z value (e.g. <code>57>71>85>99</code>)</div>';
+    return;
+  }
+
+  // Score all compounds
+  const scored=data.map(c=>{
+    const {score,totalPossible,matched,unmatched,riBonus,basePeakMatch}=scoreCompound(c,ionList,riTarget);
+    return {c,score,totalPossible,matched,unmatched,riBonus,basePeakMatch};
+  }).filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score);
+
+  if(scored.length===0){
+    res.className='sm-results visible';
+    res.innerHTML='<div class="sm-no-result">No compounds matched any of the specified ions. Check your m/z values.</div>';
+    return;
+  }
+
+  // Determine confidence tiers from score distribution
+  const topScore=scored[0].score;
+  const top8=scored.slice(0,8);
+
+  // Build summary
+  const ion1=ionList[0];
+  const totalMatching=scored.length;
+  let summaryText=`Searched ${ionList.length} ions against ${data.length} library compounds — ${totalMatching} compound${totalMatching!==1?'s':''} matched at least one ion.`;
+  if(riTarget) summaryText+=` RI=${riTarget} provided for proximity scoring.`;
+  summaryText+=` Showing top ${Math.min(8,scored.length)} candidates ranked by weighted ion-match score.`;
+  if(ionList[0]===57) summaryText+=' <strong>Note:</strong> m/z 57 (C₄H₉⁺) is the universal n-alkane base — many compounds share it; higher-priority ions in your series are key differentiators.';
+  if(ionList[0]===132) summaryText+=' <strong>m/z 132 base peak</strong> = McLafferty rearrangement of TMS fatty acid ester — confirms fatty acid class.';
+  if(ionList[0]===75) summaryText+=' <strong>m/z 75 base peak</strong> = TMS ether cation [(CH₃)₂Si=OH]⁺ — confirms primary alcohol class.';
+  if(ionList.includes(149)) summaryText+=' <strong>⚠ m/z 149 present</strong> = phthalate plasticizer contamination (DBP/DEHP) — check your plasticware!';
+
+  let html=`<div class="sm-summary">🔬 ${summaryText}</div><div class="sm-candidates">`;
+
+  top8.forEach(({c,score,totalPossible,matched,unmatched,riBonus,basePeakMatch})=>{
+    const pct=Math.round((score/Math.max(totalPossible+6,1))*100);
+    let tier,tierClass;
+    if(score>=topScore*0.75){tier='High match';tierClass='score-high score-badge-high';}
+    else if(score>=topScore*0.45){tier='Possible';tierClass='score-med score-badge-med';}
+    else{tier='Low confidence';tierClass='score-low score-badge-low';}
+    const cardClass=tierClass.split(' ')[0];
+
+    // Show matched ions (green) and unmatched (dim)
+    const matchedTags=matched.map(m=>`<span class="ion-tag ion-match">${m}</span>`).join('');
+    const unmatchedTags=unmatched.map(m=>`<span class="ion-tag ion-miss">${m}</span>`).join('');
+
+    // Reason text
+    let reason='';
+    if(matched.length>0) reason+=`Matched ${matched.length}/${ionList.length} queried ion${ionList.length>1?'s':''}: <strong>${matched.join(', ')}</strong>. `;
+    if(unmatched.length>0) reason+=`Not in library record: ${unmatched.join(', ')}. `;
+    if(basePeakMatch) reason+=`✓ Base peak m/z ${ionList[0]} matches library base peak. `;
+    if(riBonus>0) reason+=`✓ RI ${c.ri} is within range of RI=${riTarget} (+${riBonus} pts). `;
+    reason+=c.ms.split('.')[0]+'.'; // first sentence of MS interpretation
+
+    // TMS note
+    const tmsNote=c.nTMS>0?`${c.nTMS} TMS group${c.nTMS>1?'s'+'  →':' →'} M⁺=${c.molTMS||'none'}, base=${c.bTMS}`:'Not silylated';
+
+    html+=`<div class="sm-card ${cardClass}" onclick="highlightCompound('${c.n.replace(/'/g,"\\'")}')">
+      <div class="sm-card-top">
+        <div class="sm-card-name">${c.n}</div>
+        <div class="sm-score-badge ${tierClass.split(' ')[1]}">${tier} (${score} pts)</div>
+      </div>
+      <div class="sm-card-meta">
+        <span class="ion-tag" style="color:var(--text2)">RI ${c.ri}</span>
+        <span class="cls ${c.css}">${c.cls}</span>
+        ${matchedTags}${unmatchedTags}
+      </div>
+      <div class="sm-card-reason">${reason}</div>
+      <div class="sm-card-tip">⚗ TMS: ${tmsNote} · Click to highlight in table ↓</div>
+    </div>`;
+  });
+
+  html+='</div>';
+  if(scored.length>8){
+    html+=`<div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text3);">${scored.length-8} more compounds matched — use the Ion Filter above to refine</div>`;
+  }
+
+  res.className='sm-results visible';
+  res.innerHTML=html;
+}
+
+function highlightCompound(name){
+  document.getElementById('q').value=name.split('(')[0].trim();
+  render();
+  const tb=document.getElementById('tb');
+  if(tb.firstChild){
+    tb.firstChild.scrollIntoView({behavior:'smooth',block:'center'});
+    tb.firstChild.click();
+  }
+}
+
+function fillSM(el){
+  document.getElementById('smIons').value=el.textContent;
+  document.getElementById('smIons').focus();
+}
+
+// ─── Enter key in smart matcher ───
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('smIons').addEventListener('keydown',e=>{
+    if(e.key==='Enter') runSmartMatcher();
+  });
+  document.getElementById('smRI').addEventListener('keydown',e=>{
+    if(e.key==='Enter') runSmartMatcher();
+  });
+  render();
+});
+</script>
+</body>
+</html>
