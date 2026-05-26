@@ -1,0 +1,46 @@
+import numpy as np
+import pandas as pd
+
+from Orange.data import Table, Domain, ContinuousVariable, DiscreteVariable
+
+#read excel file and make dataframe
+#use the r to make the file path a raw string, this prevents errors from misreading the dashes
+df = pd.read_excel (r"D:\2023 Citrus Project Quant\Bitters.xlsx")
+
+#make a separate data frame and remove the metadata columns
+data = df.copy()
+drop = data.drop(['Category', 'Cultivar'], axis=1)
+
+#using the meta-data free data frame, normalize all numerical data points using min-max method
+
+for column in drop.columns:
+  drop[column] = (drop[column] - drop[column].min())/(drop[column].max() - drop[column].min())
+
+#transfer into orange system by updating domain and array information
+# create continuous variables for normalized data columns
+
+attributes = [ContinuousVariabl(col) for col in drop.columns]
+
+#use string data from metadata columns for orange to use as labels
+cat_category = data['Category'].astype('category')
+category_values = cat_category.cat.categories.tolist()
+category_codes = cat_category.cat.codes.to_numpy()[:, np.newaxis]
+
+cat_cultivar = data['Cultivar'].astype('category')
+cultivar_values = cat_category.cat.categories.tolist()
+cultivar_codes = cat_category.cat.codes.to_numpy()[:, np.newaxis]
+
+#adding dropped columns of metadata to attributes list as discrete variables
+attributes.append(DiscreteVariable("Category", values=category_values))
+attributes.append(DiscreteVariable("Cultivar", values=cultivar_values))
+
+#define a final domain with all the obtained features
+domain = Domain(attributes)
+
+#convert text columns into numeric codes for orange processing
+category_codes = data['Category'].astype('category').cat.codes.to_numpy()[:, np.newaxis]
+cultivar_codes = data['Cultivar'].astype('category').cat.codes.to_numpy()[:, np.newaxis]
+
+#combine normalized data array with metadata arrays and create output table in orange
+arr = np.hstack([drop.to_numpy(), category_codes, cultivar_codes])
+out_data = Table.from_numpy(domain, arr)
