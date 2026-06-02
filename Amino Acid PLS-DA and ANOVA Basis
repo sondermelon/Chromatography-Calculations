@@ -1,0 +1,165 @@
+# LOADING REQUISITE LIBRARIES FOR ANALYSIS
+install.packages("readxl")
+install.packages("ggplot2")
+install.packages("scales")
+install.packages("dplyr")
+install.packages("patchwork")
+install.packages("BiocManager")
+BiocManager::install("mixOmics")
+install.packages("multcompView")
+install.packages("mclust")
+library(readxl)
+library(mixOmics)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(patchwork)
+library(multcompView)
+library(mclust)
+
+# CREATE PLS-DA 
+df <- read_excel("Amino Acids R Format.xlsx", sheet = "Sheet1")
+X <- as.matrix(df[, 6:ncol(df)])
+Y <- as.factor(df[[2]])
+final_plsda <- plsda(X, Y, ncomp = 2)
+final_plsda
+
+# DETERMINE COMPONENT % Contributions
+plotIndiv(final_plsda)
+
+#Note: The values listed for the X and Y axes will be the % of all variation that each component explains.
+
+# COLOR AND SHAPE FORMATTING
+my_colors <- c(
+"Alsop"="#000000", "Star Ruby"="#D3D3D3", "Cara Cara"="#00B0FF",
+"Glen"="#18FFFF", "Bahia"="#69F0AE", "Hamilin"="#B2FF59",
+"Early Gold"="#FFD600", "Tresca"="#FF8F00",
+"Early Pride"="#D50000", "1.4.59"="#7B1FA2"
+)
+my_shapes <- c(  "Alsop"=24, "Star Ruby"=24, "Cara Cara"=24, "Glen"=24, "Bahia"=24, "Hamilin"=24, "Early Gold"=21, "Tresca"=21, "Early Pride"=21, "1.4.59"=21)
+
+# Create Color + Shaped PLS-DA Chart with Ellipses (to be changed); Change value for X.Label and Y.Label depending on actual component contribution
+
+p_base <- plotIndiv(final_plsda,
+group = Y,
+ind.names = FALSE,
+legend = TRUE,
+ellipse = TRUE,
+ellipse.level = 0.95,
+col = my_colors,
+title = NULL,
+X.label = "Component 1 (52%)",
+Y.label = "Component 2 (22%)")
+
+# Create VIP Chart
+# Calculate and sort VIP scores
+vip_comp1 <- vip(final_plsda)[, 1]
+top_vips  <- sort(vip_comp1, decreasing = TRUE)[1:10]
+vip_df <- data.frame(
+Metabolite = factor(names(top_vips), levels = rev(names(top_vips))),
+Score      = top_vips
+) %>%
+mutate(Metabolite = recode(Metabolite,
+"Hesp.galctoside" = "Hesp. galactoside",
+"Tricin.5.O.glucoside" = "Tricin-5-O-glucoside"))
+plot_b <- ggplot(vip_df, aes(x = Score, y = Metabolite)) +
+geom_hline(yintercept = 1:nrow(vip_df), color = "gray90", linewidth = 0.5) +
+geom_point(size = 4, color = "red") +
+scale_x_continuous(labels = label_number(accuracy = 0.01)) +
+scale_y_discrete(expand = expansion(mult = c(0.05, 0.05))) +
+theme_bw() +
+theme(
+panel.grid.major.y = element_blank(),
+panel.grid.minor   = element_blank(),
+panel.border       = element_rect(color = "black", fill = NA, linewidth = 1),
+axis.text          = element_text(color = "black", size = 11),
+axis.title.x       = element_blank()
+) +
+labs(y = NULL)
+plot_b
+
+# Combine PLS-DA and VIP, then export as image
+combined_final <- (plot_a + plot_b) +
+plot_layout(widths = c(7, 3)) +
+plot_annotation(tag_levels = 'A')
+# Display the plot
+print(combined_final)
+# Save high-resolution file
+ggsave("faa_pls_vip_plot_final.png",
+plot   = combined_final,
+width  = 10,
+height = 4,
+dpi    = 600)
+
+# Extract PLS-DA coordinates
+X_scores <- final_plsda$variates$X[, 1:2]
+mc <- Mclust(X_scores) 
+
+#Elbow Analysis to determine K-Means
+wss <- sapply(1:10, function(k){
+kmeans(X_scores, centers = k, nstart = 10)$tot.withinss
+})
+
+plot(1:10, wss, type = "b",
+xlab = "Number of clusters",
+ylab = "Within-cluster sum of squares")
+
+#K-Means Cluster Chart
+set.seed(123)
+kmeans_res <- kmeans(X_scores, centers = 3, nstart = 25)
+cluster <- as.factor(kmeans_res$cluster)
+plot(final_plsda$variates$X[,1:2],
+col = cluster,
+pch = 19,
+xlab = "Component 1 (52%)",
+ylab = "Component 2 (22%)")
+p_base1 <- plotIndiv(
+final_plsda,
+group = Y,
+ind.names = FALSE,
+legend = TRUE,
+ellipse = FALSE,
+col = my_colors,
+title = NULL,
+X.label = "Component 1 (52%)",
+Y.label = "Component 2 (22%)",
+style = "ggplot2"
+)
+p_base1
+
+
+
+#AOV Analysis
+
+#Formatting Column Names
+colnames(df) <- make.names(colnames(df))
+
+#Running One-Way ANOVA
+LP <- aov(L.Phenylalanine ~ Scion.Cultivar, data = df)
+summary(LP)
+
+#Post-Hoc Tukey HSD and Mean Letter Grouping
+LPTukey <- TukeyHSD(LP)
+LPGrouping <- multcompLetters4(LP, LPTukey)
+LPGrouping
+
+#Determine Mean Value
+LPMeans <- aggregate(L.Phenylalanine ~ Scion.Cultivar, data = df, mean)
+
+#Create Table for Amino Acid sorted by Highest to Lowest mg/L
+letters_LPC <- c(
+     "Star Ruby" = "a",
+     "Hamilin" = "ab",
+     "Early Pride" = "abc",
+     "Alsop" = "bcd",
+     "Cara Cara" = "bcd",
+     "Bahia" = "bcd",
+     "Glen" = "cd",
+     "Early Gold" = "d",
+     "1.4.59" = "d",
+     "Tresca" = "d")
+ 
+LPCLetters_df <- data.frame(Scion.Cultivar = names(letters_LPC), Letters = letters_LPC)
+LPTable <- merge(LPMeans, LPCLetters_df, by = "Scion.Cultivar")
+LPTable <- LPTable[order(-LPTable$L.Phenylalanine), ]
+LPTable
