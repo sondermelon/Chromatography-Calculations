@@ -163,3 +163,198 @@ LPCLetters_df <- data.frame(Scion.Cultivar = names(letters_LPC), Letters = lette
 LPTable <- merge(LPMeans, LPCLetters_df, by = "Scion.Cultivar")
 LPTable <- LPTable[order(-LPTable$L.Phenylalanine), ]
 LPTable
+
+## ABOVE IS SINGLE FILE. BELOW IS THE NON-LOOP VERSION. I SHOULD MAKE A VERSION OF THIS THAT IS A LOOP AND THEREFORE LESS VULNERABLE TO TYPOS. 
+#Batch AOV 
+
+LP <- aov(L.Phenylalanine ~ Scion.Cultivar, data = df)
+LEU <- aov(Leucine ~ Scion.Cultivar, data = df)
+TRP <- aov(Tryptophan ~ Scion.Cultivar, data = df)
+ISO <- aov(Isoleucine ~ Scion.Cultivar, data = df)
+MET <- aov(L.Methionine ~ Scion.Cultivar, data = df)
+TYR <- aov(Tyrosine ~ Scion.Cultivar, data = df)
+VAL <- aov(L.Valine ~ Scion.Cultivar, data = df)
+PRO <- aov(Proline ~ Scion.Cultivar, data = df)
+ALA <- aov(Alanine ~ Scion.Cultivar, data = df)
+THR <- aov(L.Threonine ~ Scion.Cultivar, data = df)
+CYS <- aov(Cysteine ~ Scion.Cultivar, data = df)
+GLY <- aov(Glycine ~ Scion.Cultivar, data = df)
+SER <- aov(Serine ~ Scion.Cultivar, data = df)
+GLU <- aov(Glutamine ~ Scion.Cultivar, data = df)
+ASP <- aov(Asparagine ~ Scion.Cultivar, data = df)
+LA <- aov(L.Aspartic.acid ~ Scion.Cultivar, data = df)
+LG <- aov(L.Glutamic.acid ~ Scion.Cultivar, data = df)
+HIS <- aov(Histidine ~ Scion.Cultivar, data = df)
+ARG <- aov(Arginine ~ Scion.Cultivar, data = df)
+LYS <- aov(Lysine ~ Scion.Cultivar, data = df)
+
+#Batch Post-Hoc Tukey HSD and Mean Letter Grouping
+
+LPTukey <- TukeyHSD(LP)
+LEUTukey <- TukeyHSD(LEU)
+TRPTukey <- TukeyHSD(TRP)
+ISOTukey <- TukeyHSD(ISO)
+METTukey <- TukeyHSD(MET)
+TYRTukey <- TukeyHSD(TYR)
+VALTukey <- TukeyHSD(VAL)
+PROTukey <- TukeyHSD(PRO)
+ALATukey <- TukeyHSD(ALA)
+THRTukey <- TukeyHSD(THR)
+CYSTukey <- TukeyHSD(CYS)
+GLYTukey <- TukeyHSD(GLY)
+SERTukey <- TukeyHSD(SER)
+GLUTukey <- TukeyHSD(GLU)
+ASPTukey <- TukeyHSD(ASP)
+LATukey <- TukeyHSD(LA)
+LGTukey <- TukeyHSD(LG)
+HISTukey <- TukeyHSD(HIS)
+ARGTukey <- TukeyHSD(ARG)
+LYSTukey <- TukeyHSD(LYS)
+
+#Grouping
+LPGrouping <- multcompLetters4(LP, LPTukey)
+LEUGrouping <- multcompLetters4(LEU, LEUTukey)
+TRPGrouping <- multcompLetters4(TRP, TRPTukey)
+ISOGrouping <- multcompLetters4(ISO, ISOTukey)
+METGrouping <- multcompLetters4(MET, METTukey)
+TYRGrouping <- multcompLetters4(TYR, TRYTukey)
+VALGrouping <- multcompLetters4(VAL, VALTukey)
+PROGrouping <- multcompLetters4(PRO, PROTukey)
+ALAGrouping <- multcompLetters4(ALA, ALATukey)
+THRGrouping <- multcompLetters4(THR, THRTukey)
+CYSGrouping <- multcompLetters4(CYS, CYSTukey)
+GLYGrouping <- multcompLetters4(CYS, CYSTukey)
+SERGrouping <- multcompLetters4(SER, SERTukey)
+GLUGrouping <- multcompLetters4(GLU, GLUTukey)
+ASPGrouping <- multcompLetters4(ASP, ASPTukey)
+LAGrouping <- multcompLetters4(LA, LATukey)
+LGGrouping <- multcompLetters4(LG, LGTukey)
+HISGrouping <- multcompLetters4(HIS, HISTukey)
+ARGGrouping <- multcompLetters4(ARG, ARGTukey)
+LYSGrouping <- multcompLetters4(LYS, LYSTukey)
+
+#Means for everything
+LPMeans <- aggregate(L.Phenylalanine ~ Scion.Cultivar, data = df, mean)
+LEUMeans <- aggregate(Leucine ~ Scion.Cultivar, data = df, mean)
+TRPMeans <- aggregate(Tryptophan ~ Scion.Cultivar, data = df, mean)
+ISOMeans <- aggregate(Isoleucine ~ Scion.Cultivar, data = df, mean)
+METMeans <- aggregate(L.Methionine ~ Scion.Cultivar, data = df, mean)
+TYRMeans <- aggregate(Tyrosine ~ Scion.Cultivar, data = df, mean)
+VALMeans <- aggregate(L.Valine ~ Scion.Cultivar, data = df, mean)
+PROMeans <- aggregate(Proline ~ Scion.Cultivar, data = df, mean)
+ALAMeans <- aggregate(Alanine ~ Scion.Cultivar, data = df, mean)
+THRMeans <- aggregate(L.Threonine ~ Scion.Cultivar, data = df, mean)
+CYSMeans <- aggregate(Cysteine ~ Scion.Cultivar, data = df, mean)
+GLYMeans <- aggregate(Glycine ~ Scion.Cultivar, data = df, mean)
+SERMeans <- aggregate(Serine ~ Scion.Cultivar, data = df, mean)
+GLUMeans <- aggregate(Glutamine ~ Scion.Cultivar, data = df, mean)
+ASPMeans <- aggregate(Asparagine ~ Scion.Cultivar, data = df, mean)
+LAMeans <- aggregate(L.Aspartic.acid ~ Scion.Cultivar, data = df, mean)
+LGMeans <- aggregate(L.Glutamic.acid ~ Scion.Cultivar, data = df, mean)
+HISMeans <- aggregate(Histidine ~ Scion.Cultivar, data = df, mean)
+ARGMeans <- aggregate(Arginine ~ Scion.Cultivar, data = df, mean)
+LYSMeans <- aggregate(Lysine ~ Scion.Cultivar, data = df, mean)
+
+#Convert letters_CODE to letters_CODE_df
+letters_LP_df <- data.frame(Scion.Cultivar = names(letters_LP), Letters = letters_LP)
+letters_LEU_df  <- data.frame(Scion.Cultivar = names(letters_LEU), Letters = letters_LEU)
+letters_TRP_df <- data.frame(Scion.Cultivar = names(letters_TRP), Letters = letters_TRP)
+letters_ISO_df <- data.frame(Scion.Cultivar = names(letters_ISO), Letters = letters_ISO)
+letters_MET_df <- data.frame(Scion.Cultivar = names(letters_MET), Letters = letters_MET)
+letters_TYR_df <- data.frame(Scion.Cultivar = names(letters_TYR), Letters = letters_TYR)
+letters_VAL_df <- data.frame(Scion.Cultivar = names(letters_VAL), Letters = letters_VAL)
+letters_PRO_df <- data.frame(Scion.Cultivar = names(letters_PRO), Letters = letters_PRO)
+letters_ALA_df <- data.frame(Scion.Cultivar = names(letters_ALA), Letters = letters_ALA)
+letters_THR_df <- data.frame(Scion.Cultivar = names(letters_THR), Letters = letters_THR)
+letters_CYS_df <- data.frame(Scion.Cultivar = names(letters_CYS), Letters = letters_CYS)
+letters_GLY_df <- data.frame(Scion.Cultivar = names(letters_GLY), Letters = letters_GLY)
+letters_SER_df <- data.frame(Scion.Cultivar = names(letters_SER), Letters = letters_SER)
+letters_GLU_df <- data.frame(Scion.Cultivar = names(letters_GLU), Letters = letters_GLU)
+letters_ASP_df <- data.frame(Scion.Cultivar = names(letters_ASP), Letters = letters_ASP)
+letters_LA_df <- data.frame(Scion.Cultivar = names(letters_LA), Letters = letters_LA)
+letters_LG_df <- data.frame(Scion.Cultivar = names(letters_LG), Letters = letters_LG)
+letters_HIS_df <- data.frame(Scion.Cultivar = names(letters_HIS), Letters = letters_HIS)
+letters_ARG_df <- data.frame(Scion.Cultivar = names(letters_ARG), Letters = letters_ARG)
+letters_LYS_df <- data.frame(Scion.Cultivar = names(letters_LYS), Letters = letters_LYS)
+
+#Create Table for Amino Acid sorted by Highest to Lowest mg/L
+LPTable <- merge(LPMeans, letters_LP_df, by = "Scion.Cultivar")
+LPTable <- LPTable[order(-LPTable$L.Phenylalanine), ]
+
+LEUTable <- merge(LEUMeans, letters_LEU_df, by = "Scion.Cultivar")
+LEUTable <- LEUTable[order(-LEUTable$Leucine), ]
+
+TRPTable <-merge(TRPMeans, letters_TRP_df, by = "Scion.Cultivar")
+TRPTable <- TRPTable[order(-TRPTable$Tryptophan), ]
+
+ISOTable <- merge(ISOMeans, letters_ISO_df, by = "Scion.Cultivar")
+ISOTable <- ISOTable[order(-ISOTable$Isoleucine),]
+
+METTable <- merge(METMeans, letters_MET_df, by = "Scion.Cultivar")
+METTable <- METTable[order(-METTable$L.Methionine), ]
+
+TYRTable <- merge(TYRMeans, letters_TYR_df, by = "Scion.Cultivar")
+TYRTable <- TYRTable[order(-TYRTable$Tyrosine),]
+
+VALTable <- merge(VALMeans, letters_VAL_df, by="Scion.Cultivar")
+VALTable <- VALTable[order(-VALTable$L.Valine), ]
+
+PROTable <- merge(PROMeans, letters_PRO_df, by="Scion.Cultivar")
+PROTable <- PROTable[order(-PROTable$Proline), ]
+
+ALATable <- merge(ALAMeans, letters_ALA_df, by="Scion.Cultivar")
+ALATable <- ALATable[order(-ALATable$Alanine),]
+
+THRTable <- merge(THRMeans, letters_THR_df, by="Scion.Cultivar")
+THRTable <- THRTable[order(-THRTable$L.Threonine), ]
+
+CYSTable <- merge(CYSMeans, letters_CYS_df, by="Scion.Cultivar")
+CYSTable <- CYSTable[order(-CYSTable$Cysteine), ]
+
+GLYTable <- merge(GLYMeans, letters_GLY_df, by="Scion.Cultivar")
+GLYTable <- GLYTable[order(-GLYTable$Glycine), ]
+
+SERTable <- merge(SERMeans, letters_SER_df, by="Scion.Cultivar")
+SERTable <- SERTable[order(-SERTable$Serine), ]
+
+GLUTable <- merge(GLUMeans, letters_GLU_df, by="Scion.Cultivar")
+GLUTable <- GLUTable[order(-GLUTable$Glutamine), ]
+
+ASPTable <- merge(ASPMeans, letters_ASP_df, by="Scion.Cultivar")
+ASPTable <- ASPTable[order(-ASPTable$Asparagine), ]
+
+LATable <- merge(LAMeans, letters_LA_df, by="Scion.Cultivar")
+LATable <- LATable[order(-LATable$L.Aspartic.acid), ]
+
+LGTable <- merge(LGMeans, letters_LG_df, by="Scion.Cultivar")
+LGTable <- LGTable[order(-LGTable$L.Glutamic.acid), ]
+
+HISTable <- merge(HISMeans, letters_HIS_df, by="Scion.Cultivar")
+HISTable <- HISTable[order(-HISTable$Histidine), ]
+
+ARGTable <- merge(ARGMeans, letters_ARG_df, by="Scion.Cultivar")
+ARGTable <- ARGTable[order(-ARGTable$Arginine), ]
+
+LYSTable <- merge(LYSMeans, letters_LYS_df, by="Scion.Cultivar")
+LYSTable <- LYSTable[order(-LYSTable$Lysine), ]
+
+LPTable
+LEUTable 
+TRPTable
+ISOTable
+METTable
+TYRTable
+VALTable
+PROTable
+ALATable
+THRTable
+CYSTable
+GLYTable
+SERTable
+GLUTable
+ASPTable
+LATable
+LGTable
+HISTable
+ARGTable
+LYSTable
