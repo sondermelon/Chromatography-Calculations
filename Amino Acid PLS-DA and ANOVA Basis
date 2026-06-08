@@ -1,3 +1,6 @@
+#naming with word_word is clearer
+#need to convert this into a loop, was suggested to change this into python
+
 # LOADING REQUISITE LIBRARIES FOR ANALYSIS
 install.packages("readxl")
 install.packages("ggplot2")
