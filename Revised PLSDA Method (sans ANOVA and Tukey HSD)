@@ -1,0 +1,142 @@
+# LOADING REQUISITE LIBRARIES FOR ANALYSIS
+install.packages("readxl")
+install.packages("ggplot2")
+install.packages("scales")
+install.packages("dplyr")
+install.packages("patchwork")
+install.packages("BiocManager")
+BiocManager::install("mixOmics")
+install.packages("multcompView")
+install.packages("mclust")
+install.packages("factoextra")
+install.packages("ggrepel")
+install.packages("ggplot2")
+library(readxl)
+library(mixOmics)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(patchwork)
+library(multcompView)
+library(mclust)
+library(factoextra)
+library(ggrepel)
+library(ggplot2)
+
+#Load the file from Excel
+filename_df <- read_excel("Filename.xlsx", sheet = "Sheet1")
+
+#Extract Component 1 predictor X and Component 2 predictor Y
+file_x <- as.matrix(df[,6:ncol(filename_df)])
+file_y <- as.factor(df[[2]])
+
+#Run the actual PLSDA component for 2 components and save as PLSDA item
+filename_plsda <- plsda(file_x, file_y, ncomp =2)
+
+#This plot shows the % variance explained by each component (there are 2 because we selected ncomp=2) on the X and Y axis
+plotIndiv(filename_plsda)
+
+#Comp1 = X% and Comp2 = Y% -> reference this for future graphs 
+#Extract the carotenoid variate data so that it can be used in ggplot
+filename_score <- filename_plsda$variates$X
+
+#The value for k with the highest value will be the best number to select for k-means clustering of the data
+gap_stat <- clusGap(filename_score, FUNcluster = kmeans, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+
+#note the optimal k value where k = N for this data set
+#set up the kmeans clustering
+kmeans_file <- kmeans(filename_score, centers = N, nstart = 25)
+cluster <- as.factor(kmeans_file$cluster)
+
+#convert to a data frame // unsure if im keeping this part and there appears to be a redundancy in the code (likely from splicing multiple versions of this together)
+file_score_df <- as.data.frame(filename_plsda$variates$X)
+file_score_df$Group <- file_y #original classes 
+file_score_df <- as.data.frame(filename_score) %>% + mutate(Group = file_y)
+file_score_df$Cluster <- factor(kmeans_file$cluster)
+
+#Define colors and shapes for plots // alter for different data
+colors <- c(
+"Aslop Red" = "#A50026"
+"Star Ruby" = "#DD3D2D"
+colors <- c(
+"Aslop Red" = "#A50026"
+"Star Ruby" = "#DD3D2D"
+colors <- c(
+"Aslop Red" = "#A50026",
+"Star Ruby" = "#DD3D2D",
+"Cara Cara" = "#EE99AA",
+"Glen" = "#E94C1F",
+"Bahia" = "#F67E4B",
+"Hamilin" = "#FDB366",
+"Early Gold" = "#FEDA8B",
+"Tresca" = "#F0E6B2",
+"Early Pride" = "#FEC44F",
+"FF 1-4-59" = "#FEE391"
+)
+shapes <- c("Alsop Red"=24, "Star Ruby"=24, "Cara Cara"=24, "Glen"=24, "Bahia"=24, "Hamilin"=24, "Early Gold"=21, "Tresca"=21, "Early Pride"=21, "FF 1-4-59"=21)
+
+#generate the PLSDA plot with ellipses
+plot_1 <-  ggplot(carotenoids_scores_df, aes(x = comp1, y = comp2, color = Group)) +
+                  geom_point (size = 3) +
+                  scale_color_manual(values = colors) +
+                  labs(
+                    title = "PLS-DA",
+                    x = "Component 1 (X%)",
+                    y = "Component 2 (Y%)") +
+                  stat_ellipse(aes(group = cluster), color = "black", linewidth = 1, linetype = 2) + 
+                  theme_classic()
+)
+
+#generate the PLSDA merged with the biplot
+  # scale loadings to match VIP scores
+  file_loading_df <- as.data.frame(filename_plsda$file_x)
+  file_loading_df$Variable <- rownames(file_loading_df)
+  scale_factor <- max(abs(file_score_df$comp1)) / max(abs(file_loading_df)$comp1))
+  file_loading_df <- file_loading_df %>%
+             mutate(
+                     comp1 = comp1 * scale_factor,
+                     comp2 = comp2 * scale_factor
+                 )
+# make the plot component with scaled arrows
+plot_2 <-ggplot(file_score_df, aes(comp1, comp2, color = Group)) +
+
+             # Points customization
+             geom_point(size = 3) +
+
+             # Loadings arrows -> can be modified to change the opacity of the arrows in the arrow = section
+             geom_segment(
+                     data = file_loading_df,
+                     aes(x = 0, y = 0, xend = comp1, yend = comp2),
+                     inherit.aes = FALSE,
+                     color = "black",
+                     arrow = arrow(length = unit(0.2, "cm")),
+                     size = 0.5
+                 ) +
+             
+             # Loadings labels for the biplot arrows
+             geom_text_repel(
+                     data = file_loading_df,
+                     aes(x = comp1, y = comp2, label = rownames(file_loading_df)),
+                     inherit.aes = FALSE,
+                     color = "black",
+                     size = 3,
+                     max.overlaps = Inf
+                 ) +
+             
+             # Colors (set to previously defined palette)
+             scale_color_manual(values = colors) +
+             coord_equal() +
+
+            # Label components on the plot
+             labs(
+                     title = "PLS-DA + Loadings",
+                     x = "Component 1 (X%)",
+                     y = "Component 2 (Y%)"
+                 ) +
+             
+             theme_classic()
+     plot_2
+
+# Combine the plots to make the merged figure
+combined_plots <- plot_1 + plot_2
