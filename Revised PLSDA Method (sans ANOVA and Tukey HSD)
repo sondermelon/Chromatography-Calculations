@@ -1,3 +1,11 @@
+# NOTE EXCEL FORMAT REQUIRED FOR THIS
+# COL 1 = Name/Sample Number [metadata column]
+# COL 2 = Scion Cultivar (in this case, this is the independent variable) [VARIABLE COLUMN]
+# COL 3 = Category/Variety [additional metadata on ancestry]
+# COL 4 = Replicate [metadata column]
+# COL 5 = Rootstock [optional second independent variable] (note: actively used only in exploratory analysis)
+# COL 6 and beyond are reserved for DEPENDENT variables with QUANTITATIVE values. 
+
 # LOADING REQUISITE LIBRARIES FOR ANALYSIS
 install.packages("readxl")
 install.packages("ggplot2")
